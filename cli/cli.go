@@ -14,15 +14,21 @@ const (
 )
 
 type model struct {
-	projects    []restapi.Project
-	issues      []restapi.Issue
-	objectCount int
-	cursor      int
-	page        string
+	redmineClient *restapi.RmClient
+	projects      []restapi.Project
+	issues        []restapi.Issue
+	objectCount   int
+	cursor        int
+	page          string
 }
 
 func initialModel() (model, error) {
-	projects, err := restapi.GetProjects()
+	rc, err := restapi.NewRm("", "")
+	if err != nil {
+		return model{}, err
+	}
+
+	projects, err := rc.GetProjects()
 	if err != nil {
 		return model{}, err
 	}
@@ -33,9 +39,10 @@ func initialModel() (model, error) {
 	}
 
 	return model{
-		projects:    projects.Projects,
-		page:        PROJECTS,
-		objectCount: len(projects.Projects),
+		redmineClient: rc,
+		projects:      projects.Projects,
+		page:          PROJECTS,
+		objectCount:   len(projects.Projects),
 	}, nil
 }
 
@@ -108,6 +115,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch m.page {
 			case PROJECTS:
 				return m.updateProjects(msg)
+			case ISSUES:
+				return m.updateIssues(msg)
 			}
 		}
 	}
@@ -122,7 +131,7 @@ func (m model) updateProjects(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter", " ":
 			project := m.projects[m.cursor]
 
-			issues, err := restapi.GetIssues(project.Id)
+			issues, err := m.redmineClient.GetIssues(project.Id)
 			if err != nil {
 				fmt.Print(err)
 				return m, tea.Quit
@@ -132,6 +141,24 @@ func (m model) updateProjects(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.page = ISSUES
 			m.cursor = 0
 			m.objectCount = len(m.issues)
+		}
+	}
+
+	return m, nil
+}
+
+func (m model) updateIssues(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter", " ":
+			issue := m.issues[m.cursor]
+
+			err := m.redmineClient.CreateTimeEntry(issue.Id, "2021-12-23")
+			if err != nil {
+				fmt.Print(err)
+				return m, tea.Quit
+			}
 		}
 	}
 

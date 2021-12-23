@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/alexey-sderzhikov/regent/cli"
 )
 
 func main() {
-	cli.Start()
+	fmt.Print(cli.Start())
+
 }
