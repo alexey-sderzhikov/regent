@@ -71,8 +71,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "enter", " ":
-			project := m.p
-			is, err := restapi.GetIssues()
+			project := m.projects.Projects[m.cursor]
+			is, err := restapi.GetIssues(project.Id)
+
+			m.choices = make([]string, len(is.Issues))
+			for ind, issue := range is.Issues {
+				m.choices[ind] = issue.Subject
+			}
+
 			if err != nil {
 				fmt.Print(err)
 			}

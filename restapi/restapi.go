@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -38,10 +39,10 @@ func GetProjects() (*ProjectList, error) {
 	return &projects, nil
 }
 
-func GetIssues(projectId string) (*IssueList, error) {
+func GetIssues(projectId int64) (*IssueList, error) {
 	var projectIdParam string
-	if projectId != "all" {
-		projectIdParam = "&project_id=" + projectId
+	if projectId != 0 {
+		projectIdParam = fmt.Sprintf("&project_id=%v", projectId)
 	}
 	req, err := http.NewRequest("GET", BERGEN_URL+"/issues.json"+"?key="+USER_API_KEY+projectIdParam, nil)
 	if err != nil {
