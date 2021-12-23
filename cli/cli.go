@@ -8,11 +8,17 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+const (
+	PROJECTS = "projects"
+	ISSUES   = "issues"
+)
+
 type model struct {
-	choices  []string
-	projects restapi.ProjectList
-	cursor   int
-	selected map[int]struct{}
+	projects    []restapi.Project
+	issues      []restapi.Issue
+	objectCount int
+	cursor      int
+	page        string
 }
 
 func initialModel() (model, error) {
@@ -27,9 +33,9 @@ func initialModel() (model, error) {
 	}
 
 	return model{
-		choices:  chs,
-		projects: *projects,
-		selected: make(map[int]struct{}),
+		projects:    projects.Projects,
+		page:        PROJECTS,
+		objectCount: len(projects.Projects),
 	}, nil
 }
 
@@ -38,15 +44,43 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) View() string {
+	switch m.page {
+	case PROJECTS:
+		return m.viewProjects()
+	case ISSUES:
+		return m.viewIssues()
+	}
+
+	return "Cannot detect current page :("
+}
+
+func (m model) viewProjects() string {
 	s := "\nBergen Projects\n"
 
-	for i, choice := range m.choices {
+	for ind, p := range m.projects {
 		cursor := " "
-		if m.cursor == i {
+		if m.cursor == ind {
 			cursor = ">"
 		}
 
-		s += fmt.Sprintf("%s %s\n", cursor, choice)
+		s += fmt.Sprintf("%s %s\n", cursor, p.Name)
+	}
+
+	s += "\nPress q to quit.\n"
+
+	return s
+}
+
+func (m model) viewIssues() string {
+	s := fmt.Sprintf("\nIssues project's - %q\n", m.issues[0].Project.Name)
+
+	for ind, i := range m.issues {
+		cursor := " "
+		if m.cursor == ind {
+			cursor = ">"
+		}
+
+		s += fmt.Sprintf("%s %s\n", cursor, i.Subject)
 	}
 
 	s += "\nPress q to quit.\n"
@@ -66,23 +100,38 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "down", "j":
-			if m.cursor < len(m.choices)-1 {
+			if m.cursor < m.objectCount-1 {
 				m.cursor++
 			}
 
 		case "enter", " ":
-			project := m.projects.Projects[m.cursor]
-			is, err := restapi.GetIssues(project.Id)
-
-			m.choices = make([]string, len(is.Issues))
-			for ind, issue := range is.Issues {
-				m.choices[ind] = issue.Subject
+			switch m.page {
+			case PROJECTS:
+				return m.updateProjects(msg)
 			}
+		}
+	}
 
+	return m, nil
+}
+
+func (m model) updateProjects(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter", " ":
+			project := m.projects[m.cursor]
+
+			issues, err := restapi.GetIssues(project.Id)
 			if err != nil {
 				fmt.Print(err)
+				return m, tea.Quit
 			}
-			fmt.Print(is)
+
+			m.issues = issues.Issues
+			m.page = ISSUES
+			m.cursor = 0
+			m.objectCount = len(m.issues)
 		}
 	}
 
