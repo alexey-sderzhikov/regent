@@ -123,13 +123,13 @@ func (r RmClient) GetIssues(projectId int64) (IssueList, error) {
 
 }
 
-func (r RmClient) CreateTimeEntry(issueId int64, date string) error {
+func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, hours int) error {
 	timeEntry := TimeEntry{
 		Time_entry: TimeEntryInner{
 			Issue_id: issueId,
 			Spent_on: date,
-			Hours:    8,
-			Comments: "test time entry",
+			Hours:    hours,
+			Comments: comment,
 			User_id:  r.User.Id,
 		},
 	}
