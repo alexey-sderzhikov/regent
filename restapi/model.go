@@ -1,30 +1,30 @@
 package restapi
 
 type Project struct {
-	Id          int64
-	Name        string
-	Identifier  string
-	Description string
+	Id          int64  `json:"id"`
+	Name        string `json:"name"`
+	Identifier  string `json:"identifier"`
+	Description string `json:"descriprion"`
 }
 
 type ProjectList struct {
-	Projects []Project
+	Projects []Project `json:"projects"`
 }
 
 type NameAndId struct {
-	Id   int64
-	Name string
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 type Issue struct {
-	Id          int64
-	Project     NameAndId
-	Subject     string
-	Description string
+	Id          int64     `json:"id"`
+	Project     NameAndId `json:"project"`
+	Subject     string    `json:"subject"`
+	Description string    `json:"description"`
 }
 
 type IssueList struct {
-	Issues []Issue
+	Issues []Issue `json:"issues"`
 }
 
 type TimeEntryInner struct {
@@ -48,5 +48,5 @@ type UserInner struct {
 }
 
 type User struct {
-	User UserInner `json:user`
+	User UserInner `json:"user"`
 }

@@ -97,21 +97,17 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "enter":
 		issue := m.issues[m.cursor]
 
-		hours, err := strconv.Atoi(m.inputs[1].Value()) // convert hours string to int
+		hours, err := strconv.Atoi(m.inputs[2].Value()) // convert hours string to int
 		if err != nil {
 			return m.errorCreate(err)
 		}
 
-		// err = m.redmineClient.CreateTimeEntry(
-		// 	issue.Id,
-		// 	m.inputs[2].Value(), // input date
-		// 	m.inputs[0].Value(), // input comment
-		// 	hours,
-		// )
-		fmt.Print(issue.Id,
-			m.inputs[2].Value(), // input date
+		err = m.redmineClient.CreateTimeEntry(
+			issue.Id,
+			m.inputs[1].Value(), // input date
 			m.inputs[0].Value(), // input comment
-			hours)
+			hours,
+		)
 		if err != nil {
 			return m.errorCreate(err)
 		}
