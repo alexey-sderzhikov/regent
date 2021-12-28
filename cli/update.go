@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -10,7 +9,7 @@ import (
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch m.page {
+		switch m.crumbs.getCurrentPage() {
 		case PROJECTS:
 			return m.updateProjects(msg)
 		case ISSUES:
@@ -28,15 +27,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) navigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "ctrl+c", "q":
+	switch msg.Type {
+	case tea.KeyEscape:
 		return m, tea.Quit
-	case "up":
+	case tea.KeyUp:
 		if m.cursor > 0 {
 			m.cursor--
 		}
-
-	case "down":
+	case tea.KeyDown:
 		if m.cursor < m.objectCount-1 {
 			m.cursor++
 		}
@@ -46,20 +44,22 @@ func (m model) navigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	switch msg.Type {
+	case tea.KeyEnter: // go to project issues
+		if len(m.issues) == 0 {
+			project := m.projects[m.cursor]
 
-	case "enter", " ":
-		project := m.projects[m.cursor]
+			issues, err := m.redmineClient.GetIssues(project.Id)
+			if err != nil {
+				return m.errorCreate(err)
+			}
 
-		issues, err := m.redmineClient.GetIssues(project.Id)
-		if err != nil {
-			return m.errorCreate(err)
+			m.issues = issues.Issues
+			m.objectCount = len(m.issues)
 		}
 
-		m.issues = issues.Issues
-		m.page = ISSUES
+		m.crumbs = m.crumbs.addPage(ISSUES)
 		m.cursor = 0
-		m.objectCount = len(m.issues)
 	default:
 		return m.navigation(msg)
 	}
@@ -68,9 +68,12 @@ func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "enter", " ":
-		m.page = INPUT_TIME_ENTRY
+	switch msg.Type {
+	case tea.KeyEnter: // go to creation new time entry for issue
+		m.crumbs = m.crumbs.addPage(INPUT_TIME_ENTRY)
+	case tea.KeyBackspace: // go to previos page
+		m.cursor = 0
+		m.crumbs = m.crumbs.popPage() // go to previos page
 	default:
 		return m.navigation(msg)
 	}
@@ -81,20 +84,20 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	switch msg.String() {
-	case "up":
+	switch msg.Type {
+	case tea.KeyUp: // go to upstair input field
 		if m.focusIndex > 0 {
 			m.inputs[m.focusIndex].Blur()
 			m.focusIndex--
 			m.inputs[m.focusIndex].Focus()
 		}
-	case "down":
+	case tea.KeyDown: //go to downstair input field
 		if m.focusIndex < len(m.inputs)-1 {
 			m.inputs[m.focusIndex].Blur()
 			m.focusIndex++
 			m.inputs[m.focusIndex].Focus()
 		}
-	case "enter":
+	case tea.KeyEnter: // create time entire
 		issue := m.issues[m.cursor]
 
 		hours, err := strconv.Atoi(m.inputs[2].Value()) // convert hours string to int
@@ -111,9 +114,10 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if err != nil {
 			return m.errorCreate(err)
 		}
-
-		fmt.Print(m.inputs[m.focusIndex].Value())
-	case "esc":
+	case tea.KeyBackspace: // go to previos page
+		m.cursor = 0
+		m.crumbs = m.crumbs.popPage()
+	case tea.KeyEsc: // escape programm
 		return m, tea.Quit
 	}
 
@@ -129,9 +133,10 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) updateError(msg tea.Msg) (model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter", " ":
-			m.page = PROJECTS
+		switch msg.Type {
+		case tea.KeyEnter:
+			m.cursor = 0
+			m.crumbs = m.crumbs.popPage()
 			return m, nil
 		}
 	}
@@ -141,6 +146,6 @@ func (m model) updateError(msg tea.Msg) (model, tea.Cmd) {
 
 func (m model) errorCreate(err error) (model, tea.Cmd) {
 	m.err = err
-	m.page = ERROR
+	m.crumbs = m.crumbs.addPage(ERROR)
 	return m, func() tea.Msg { return errMsg(err) }
 }

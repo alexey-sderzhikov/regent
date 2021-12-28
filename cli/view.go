@@ -22,14 +22,14 @@ var titleStyle = lipgloss.NewStyle().
 	Bold(true).
 	PaddingLeft(3).
 	PaddingRight(3).
-	Foreground(lipgloss.Color("#FAFAFA")).
-	Background(lipgloss.Color("#7D56F4"))
+	Foreground(lipgloss.Color("#7D56F4"))
 
 var cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("201"))
-var textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("202"))
+var currentLineStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("202"))
+var crumbsStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
 
 func (m model) View() string {
-	switch m.page {
+	switch m.crumbs.getCurrentPage() {
 	case PROJECTS:
 		return m.viewProjects()
 	case ISSUES:
@@ -44,16 +44,20 @@ func (m model) View() string {
 }
 
 func (m model) viewProjects() string {
-
 	s := titleStyle.Render("Bergen Projects")
-	s += "\n\n"
+	s += "\n"
+	s += crumbsStyle.Render(
+		m.crumbs.printStack(),
+	)
+
+	s += "\n"
 
 	for ind, p := range m.projects {
 		cursor := " "
 		name := p.Name
 		if m.cursor == ind {
 			cursor = cursorStyle.Render(">")
-			name = textStyle.Render(name)
+			name = currentLineStyle.Render(name)
 		}
 
 		s += fmt.Sprintf("%s %s\n", cursor, name)
@@ -66,16 +70,20 @@ func (m model) viewProjects() string {
 
 func (m model) viewIssues() string {
 	s := titleStyle.Render(fmt.Sprintf(
-		"\nIssues project's - %q\n", m.issues[0].Project.Name),
+		"Issues project's - %q", m.issues[0].Project.Name),
 	)
-	s += "\n\n"
+	s += "\n"
+	s += crumbsStyle.Render(
+		m.crumbs.printStack(),
+	)
+	s += "\n"
 
 	for ind, i := range m.issues {
 		cursor := " "
 		subject := i.Subject
 		if m.cursor == ind {
 			cursor = cursorStyle.Render(">")
-			subject = textStyle.Render(subject)
+			subject = currentLineStyle.Render(subject)
 		}
 
 		s += fmt.Sprintf("%s %s\n", cursor, subject)
@@ -87,8 +95,11 @@ func (m model) viewIssues() string {
 }
 
 func (m model) viewInputTimeEntry() string {
+	s := crumbsStyle.Render(
+		m.crumbs.printStack(),
+	)
 
-	return fmt.Sprint(
+	s += fmt.Sprint(
 		"\nText comment to time entry:\n",
 		m.inputs[0].View(),
 		"\nText date:\n",
@@ -97,8 +108,12 @@ func (m model) viewInputTimeEntry() string {
 		m.inputs[2].View(),
 		"\n",
 	)
+
+	return s
 }
 
 func (m model) viewError() string {
-	return fmt.Sprint(m.err)
+	s := m.crumbs.printStack() + "\n"
+	s += fmt.Sprint(m.err)
+	return s
 }

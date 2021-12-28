@@ -15,8 +15,29 @@ type model struct {
 	focusIndex    int
 	objectCount   int
 	cursor        int
-	page          string
+	crumbs        pagesStack
 	err           error
+}
+type pagesStack []string
+
+func (p pagesStack) addPage(page string) pagesStack {
+	return append(p, page)
+}
+
+func (p pagesStack) popPage() pagesStack {
+	return p[:len(p)-1]
+}
+
+func (p pagesStack) printStack() string {
+	var res string = "/"
+	for _, page := range p {
+		res += page + "/"
+	}
+	return res
+}
+
+func (p pagesStack) getCurrentPage() string {
+	return p[len(p)-1]
 }
 
 func initialModel() (model, error) {
@@ -43,7 +64,7 @@ func initialModel() (model, error) {
 	return model{
 		redmineClient: rc,
 		projects:      projects.Projects,
-		page:          PROJECTS,
+		crumbs:        pagesStack{PROJECTS},
 		objectCount:   len(projects.Projects),
 		inputs:        inputs,
 		focusIndex:    0,
