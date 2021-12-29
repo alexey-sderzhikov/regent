@@ -19,6 +19,11 @@ type RmClient struct {
 	HttpClient *http.Client
 }
 
+type respStruct struct {
+	ByteListBody []byte
+	Status       string
+}
+
 func NewRm(source string, apiKey string) (*RmClient, error) {
 	r := &RmClient{}
 
@@ -45,6 +50,7 @@ func NewRm(source string, apiKey string) (*RmClient, error) {
 	return r, nil
 }
 
+// create request with request type, url, body etc. before send to server
 func (r RmClient) makeRequest(reqType string, endPoint string, params []string, body io.Reader) (*http.Request, error) {
 	url := r.SourceUrl + endPoint + "?key=" + r.ApiKey
 
@@ -62,34 +68,38 @@ func (r RmClient) makeRequest(reqType string, endPoint string, params []string, 
 	return req, nil
 }
 
-func (r RmClient) doRequest(req *http.Request) ([]byte, error) {
-	resp, err := r.HttpClient.Do(req)
+// send before created request to server and return respons like bytes slice
+func (r RmClient) doRequest(req *http.Request) (respStruct, error) {
+	respHttp, err := r.HttpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return respStruct{}, err
 	}
 
-	defer resp.Body.Close()
-	byteList, err := ioutil.ReadAll(resp.Body)
+	defer respHttp.Body.Close()
+	resp := respStruct{}
+	resp.ByteListBody, err = ioutil.ReadAll(respHttp.Body)
 	if err != nil {
-		return nil, err
+		return respStruct{}, err
 	}
+	resp.Status = respHttp.Status
 
-	return byteList, nil
+	return resp, nil
 }
 
+// TODO add handling error status codes
 func (r RmClient) GetProjects() (ProjectList, error) {
 	req, err := r.makeRequest("GET", "/projects.json", nil, nil)
 	if err != nil {
 		return ProjectList{}, err
 	}
 
-	byteList, err := r.doRequest(req)
+	resp, err := r.doRequest(req)
 	if err != nil {
 		return ProjectList{}, err
 	}
 
 	projects := ProjectList{}
-	err = json.Unmarshal(byteList, &projects)
+	err = json.Unmarshal(resp.ByteListBody, &projects)
 	if err != nil {
 		return ProjectList{}, err
 	}
@@ -97,6 +107,7 @@ func (r RmClient) GetProjects() (ProjectList, error) {
 	return projects, nil
 }
 
+// TODO add handling error status codes
 func (r RmClient) GetIssues(projectId int64) (IssueList, error) {
 	var projectIdParam string
 	if projectId != 0 {
@@ -108,13 +119,13 @@ func (r RmClient) GetIssues(projectId int64) (IssueList, error) {
 		return IssueList{}, err
 	}
 
-	byteList, err := r.doRequest(req)
+	resp, err := r.doRequest(req)
 	if err != nil {
 		return IssueList{}, err
 	}
 
 	issues := IssueList{}
-	err = json.Unmarshal(byteList, &issues)
+	err = json.Unmarshal(resp.ByteListBody, &issues)
 	if err != nil {
 		return IssueList{}, err
 	}
@@ -123,7 +134,7 @@ func (r RmClient) GetIssues(projectId int64) (IssueList, error) {
 
 }
 
-func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, hours int) error {
+func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, hours int) (string, error) {
 	timeEntry := TimeEntry{
 		Time_entry: TimeEntryInner{
 			Issue_id: issueId,
@@ -136,39 +147,39 @@ func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, ho
 
 	byteList, err := json.Marshal(timeEntry)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	reqBody := bytes.NewBuffer(byteList)
 	req, err := r.makeRequest("POST", "/time_entries.json", nil, reqBody)
 	fmt.Print(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	byteList, err = r.doRequest(req)
+	resp, err := r.doRequest(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	fmt.Print(string(byteList))
-	return nil
+	return resp.Status, nil
 
 }
 
+// get user data from api key
 func (r RmClient) getCurrentUser() (UserInner, error) {
 	req, err := r.makeRequest("GET", "/users/current.json", nil, nil)
 	if err != nil {
 		return UserInner{}, err
 	}
 
-	byteList, err := r.doRequest(req)
+	resp, err := r.doRequest(req)
 	if err != nil {
 		return UserInner{}, err
 	}
 
 	userResp := User{}
-	err = json.Unmarshal(byteList, &userResp)
+	err = json.Unmarshal(resp.ByteListBody, &userResp)
 	if err != nil {
 		return UserInner{}, nil
 	}

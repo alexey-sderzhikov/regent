@@ -2,6 +2,7 @@ package cli
 
 import (
 	"strconv"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -70,8 +71,9 @@ func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter: // go to creation new time entry for issue
+		m.inputs[1].SetValue(time.Now().Format("2006-01-02")) // set today date
 		m.crumbs = m.crumbs.addPage(INPUT_TIME_ENTRY)
-	case tea.KeyBackspace: // go to previos page
+	case tea.KeyCtrlQ: // go to previos page
 		m.cursor = 0
 		m.crumbs = m.crumbs.popPage() // go to previos page
 	default:
@@ -105,7 +107,7 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m.errorCreate(err)
 		}
 
-		err = m.redmineClient.CreateTimeEntry(
+		status, err := m.redmineClient.CreateTimeEntry(
 			issue.Id,
 			m.inputs[1].Value(), // input date
 			m.inputs[0].Value(), // input comment
@@ -114,7 +116,8 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if err != nil {
 			return m.errorCreate(err)
 		}
-	case tea.KeyBackspace: // go to previos page
+		m.status = status
+	case tea.KeyCtrlQ: // go to previos page
 		m.cursor = 0
 		m.crumbs = m.crumbs.popPage()
 	case tea.KeyEsc: // escape programm
@@ -134,10 +137,12 @@ func (m model) updateError(msg tea.Msg) (model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyEnter:
+		case tea.KeyCtrlQ:
 			m.cursor = 0
 			m.crumbs = m.crumbs.popPage()
 			return m, nil
+		case tea.KeyEscape:
+			return m, tea.Quit
 		}
 	}
 

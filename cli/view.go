@@ -28,6 +28,8 @@ var cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("201"))
 var currentLineStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("202"))
 var crumbsStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
 
+var helperText = "\n'Esc' - close; 'Ctrl+q' - go to previos page\n"
+
 func (m model) View() string {
 	switch m.crumbs.getCurrentPage() {
 	case PROJECTS:
@@ -63,7 +65,7 @@ func (m model) viewProjects() string {
 		s += fmt.Sprintf("%s %s\n", cursor, name)
 	}
 
-	s += "\nPress q to quit.\n"
+	s += helperText
 
 	return s
 }
@@ -89,7 +91,7 @@ func (m model) viewIssues() string {
 		s += fmt.Sprintf("%s %s\n", cursor, subject)
 	}
 
-	s += "\nPress q to quit.\n"
+	s += helperText
 
 	return s
 }
@@ -109,11 +111,16 @@ func (m model) viewInputTimeEntry() string {
 		"\n",
 	)
 
+	s += helperText
+
 	return s
 }
 
 func (m model) viewError() string {
-	s := m.crumbs.printStack() + "\n"
-	s += fmt.Sprint(m.err)
+	s := crumbsStyle.Render(
+		m.crumbs.printStack(),
+	)
+	s += fmt.Sprint("\n", m.err, "\n")
+	s += helperText
 	return s
 }

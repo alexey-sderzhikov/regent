@@ -5,6 +5,12 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
+const (
+	COMMENT_FIELD = "comment"
+	DATE_FIELD    = "date"
+	HOURS_FIELD   = "hours"
+)
+
 type errMsg error
 
 type model struct {
@@ -16,8 +22,10 @@ type model struct {
 	objectCount   int
 	cursor        int
 	crumbs        pagesStack
+	status        string
 	err           error
 }
+
 type pagesStack []string
 
 func (p pagesStack) addPage(page string) pagesStack {
@@ -41,34 +49,31 @@ func (p pagesStack) getCurrentPage() string {
 }
 
 func initialModel() (model, error) {
+	m := model{}
+
 	rc, err := restapi.NewRm("", "")
 	if err != nil {
 		return model{}, err
 	}
+	m.redmineClient = rc
 
 	projects, err := rc.GetProjects()
 	if err != nil {
 		return model{}, err
 	}
+	m.projects = projects.Projects
+	m.objectCount = len(m.projects)
 
-	chs := make([]string, len(projects.Projects))
-	for ind, proj := range projects.Projects {
-		chs[ind] = proj.Name
-	}
+	m.crumbs = pagesStack{PROJECTS}
 
-	inputs := make([]textinput.Model, 3)
-	inputs[0] = initialCommentInput()
-	inputs[1] = initialDateInput()
-	inputs[2] = initialHoursInput()
+	m.inputs = make([]textinput.Model, 3)
+	m.inputs[0] = initialCommentInput()
+	m.inputs[1] = initialDateInput()
+	m.inputs[2] = initialHoursInput()
 
-	return model{
-		redmineClient: rc,
-		projects:      projects.Projects,
-		crumbs:        pagesStack{PROJECTS},
-		objectCount:   len(projects.Projects),
-		inputs:        inputs,
-		focusIndex:    0,
-	}, nil
+	m.focusIndex = 0
+
+	return m, nil
 }
 
 func initialHoursInput() textinput.Model {
@@ -82,7 +87,7 @@ func initialHoursInput() textinput.Model {
 
 func initialDateInput() textinput.Model {
 	ti := textinput.NewModel()
-	ti.Placeholder = "Date format - 2020-12-25"
+	// ti.Placeholder = "Date format - 2020-12-25"
 	ti.CharLimit = 12
 	ti.Width = 12
 
