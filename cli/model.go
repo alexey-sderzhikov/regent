@@ -37,9 +37,9 @@ func (p pagesStack) addPage(page string) pagesStack {
 
 func (p pagesStack) popPage() (pagesStack, error) {
 	if len(p) <= 1 {
-		return p, fmt.Errorf("")
+		return p, fmt.Errorf("its last page in stack")
 	}
-	return p[:len(p)-1]
+	return p[:len(p)-1], nil
 }
 
 func (p pagesStack) printStack() string {

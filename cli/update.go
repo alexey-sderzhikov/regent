@@ -54,7 +54,12 @@ func (m model) navigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyCtrlQ: // go to previos page
 		m.status = ""
 		m.cursor = 0
-		m.crumbs = m.crumbs.popPage()
+
+		var err error
+		m.crumbs, err = m.crumbs.popPage()
+		if err != nil {
+			return m.errorCreate(err)
+		}
 	}
 
 	return m, nil
@@ -64,20 +69,18 @@ func (m model) navigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter: // go to project issues
-		if len(m.issues) == 0 {
-			project := m.projects[m.cursor]
+		project := m.projects[m.cursor]
 
-			issues, err := m.redmineClient.GetIssues(project.Id)
-			if err != nil {
-				return m.errorCreate(err)
-			}
-
-			m.issues = issues.Issues
-			m.objectCount = len(m.issues)
+		issues, err := m.redmineClient.GetIssues(project.Id)
+		if err != nil {
+			return m.errorCreate(err)
 		}
 
-		m.crumbs = m.crumbs.addPage(ISSUES)
+		m.issues = issues.Issues
+		m.objectCount = len(m.issues)
+
 		m.cursor = 0
+		m.crumbs = m.crumbs.addPage(ISSUES)
 	default:
 		return m.navigation(msg)
 	}
@@ -93,20 +96,23 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.crumbs = m.crumbs.addPage(INPUT_TIME_ENTRY)
 	case tea.KeyCtrlQ: // go to previos page
 		m.cursor = 0
-		m.crumbs = m.crumbs.popPage() // go to previos page
+		m.crumbs, _ = m.crumbs.popPage() // go to previos page
 	case tea.KeyCtrlA:
 		p := restapi.TimeEntryParam{
 			Limit:   10,
 			User_id: m.redmineClient.User.Id,
 		}
 
-		te, err := m.redmineClient.GetTimeEntryList(p)
-		if err != nil {
-			m.errorCreate(err)
+		if len(m.timeEntries) == 0 {
+			te, err := m.redmineClient.GetTimeEntryList(p)
+			if err != nil {
+				m.errorCreate(err)
+			}
+
+			m.timeEntries = te.Time_entries
+			m.objectCount = len(m.timeEntries)
 		}
 
-		m.timeEntries = te.Time_entries
-		m.objectCount = len(m.timeEntries)
 		m.cursor = 0
 		m.crumbs = m.crumbs.addPage(TIME_ENTRIES)
 	default:
@@ -136,7 +142,7 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyEnter: // create time entire
 		issue := m.issues[m.cursor]
 
-		hours, err := strconv.ParseFloat(m.inputs[2].Value(), 32) // convert hours string to float32
+		hours, err := strconv.ParseFloat(m.inputs[2].Value(), 32) // convert input hours string to float32
 		if err != nil {
 			return m.errorCreate(err)
 		}
@@ -178,7 +184,7 @@ func (m model) updateError(msg tea.Msg) (model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyCtrlQ:
 			m.cursor = 0
-			m.crumbs = m.crumbs.popPage()
+			m.crumbs, _ = m.crumbs.popPage()
 			return m, nil
 		case tea.KeyEscape:
 			return m, tea.Quit

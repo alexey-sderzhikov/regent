@@ -7,3 +7,4 @@ TODO:
     . Implement help element from charm library
     . Add spiner
     . Add filters to issuest time entry etc
+    . Add pagination

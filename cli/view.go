@@ -25,10 +25,11 @@ var titleStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#7D56F4"))
 
 var cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("201"))
-var currentLineStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("202"))
+var currentLineStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Bold(true).MarginLeft(2)
 var crumbsStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
 var statusStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-
+var errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+var textStyle = lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder())
 var helperText = "\n'Esc' - close; 'Ctrl+q' - go to previos page\n"
 
 func (m model) View() string {
@@ -57,6 +58,7 @@ func (m model) viewProjects() string {
 
 	s += "\n"
 
+	var mainText string
 	for ind, p := range m.projects {
 		cursor := " "
 		name := p.Name
@@ -65,9 +67,10 @@ func (m model) viewProjects() string {
 			name = currentLineStyle.Render(name)
 		}
 
-		s += fmt.Sprintf("%s %s\n", cursor, name)
+		mainText += fmt.Sprintf("%s %s\n", cursor, name)
 	}
 
+	s += textStyle.Render(mainText)
 	s += helperText
 
 	return s
@@ -158,7 +161,11 @@ func (m model) viewError() string {
 	s := crumbsStyle.Render(
 		m.crumbs.printStack(),
 	)
-	s += fmt.Sprint("\n", m.err, "\n")
+
+	s += "\n\n"
+	s += errorStyle.Render("Error! - " + fmt.Sprint(m.err))
+	s += "\n"
+
 	s += helperText
 	return s
 }
