@@ -27,6 +27,7 @@ var titleStyle = lipgloss.NewStyle().
 var cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("201"))
 var currentLineStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("202"))
 var crumbsStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
+var statusStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 var helperText = "\n'Esc' - close; 'Ctrl+q' - go to previos page\n"
 
@@ -38,6 +39,8 @@ func (m model) View() string {
 		return m.viewIssues()
 	case INPUT_TIME_ENTRY:
 		return m.viewInputTimeEntry()
+	case TIME_ENTRIES:
+		return m.viewTimeEntries()
 	case ERROR:
 		return m.viewError()
 	}
@@ -95,6 +98,36 @@ func (m model) viewIssues() string {
 
 	return s
 }
+func (m model) viewTimeEntries() string {
+	s := titleStyle.Render(fmt.Sprintf("%s Time Entries", m.redmineClient.User.Lastname))
+	s += "\n"
+	s += crumbsStyle.Render(
+		m.crumbs.printStack(),
+	)
+
+	s += "\n"
+
+	for ind, te := range m.timeEntries {
+		cursor := " "
+		spent_on := te.Spent_on
+		comment := te.Comments
+		hours := fmt.Sprintf("%v", te.Hours)
+		issueId := fmt.Sprintf("%v", te.Issue.Id)
+		if m.cursor == ind {
+			cursor = cursorStyle.Render(">")
+			spent_on = currentLineStyle.Render(spent_on)
+			comment = currentLineStyle.Render(comment)
+			hours = currentLineStyle.Render(hours)
+			issueId = currentLineStyle.Render(issueId)
+		}
+
+		s += fmt.Sprintf("%s %s %s %s %s\n", cursor, spent_on, issueId, hours, comment)
+	}
+
+	s += helperText
+
+	return s
+}
 
 func (m model) viewInputTimeEntry() string {
 	s := crumbsStyle.Render(
@@ -110,6 +143,11 @@ func (m model) viewInputTimeEntry() string {
 		m.inputs[2].View(),
 		"\n",
 	)
+
+	if m.status != "" {
+		s += statusStyle.Render(m.status)
+		s += "\n"
+	}
 
 	s += helperText
 

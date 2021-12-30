@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/alexey-sderzhikov/regent/restapi"
 	"github.com/charmbracelet/bubbles/textinput"
 )
@@ -17,6 +19,7 @@ type model struct {
 	redmineClient *restapi.RmClient
 	projects      []restapi.Project
 	issues        []restapi.Issue
+	timeEntries   []restapi.TimeEntryResponse
 	inputs        []textinput.Model
 	focusIndex    int
 	objectCount   int
@@ -32,7 +35,10 @@ func (p pagesStack) addPage(page string) pagesStack {
 	return append(p, page)
 }
 
-func (p pagesStack) popPage() pagesStack {
+func (p pagesStack) popPage() (pagesStack, error) {
+	if len(p) <= 1 {
+		return p, fmt.Errorf("")
+	}
 	return p[:len(p)-1]
 }
 
@@ -87,7 +93,6 @@ func initialHoursInput() textinput.Model {
 
 func initialDateInput() textinput.Model {
 	ti := textinput.NewModel()
-	// ti.Placeholder = "Date format - 2020-12-25"
 	ti.CharLimit = 12
 	ti.Width = 12
 

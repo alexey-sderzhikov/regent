@@ -16,6 +16,10 @@ type NameAndId struct {
 	Name string `json:"name"`
 }
 
+type Id struct {
+	Id int64 `json:"id"`
+}
+
 type Issue struct {
 	Id          int64     `json:"id"`
 	Project     NameAndId `json:"project"`
@@ -28,15 +32,34 @@ type IssueList struct {
 }
 
 type TimeEntryInner struct {
-	Issue_id int64  `json:"issue_id"`
-	Spent_on string `json:"spent_on"`
-	Hours    int    `json:"hours"`
-	Comments string `json:"comments"`
-	User_id  int64  `json:"user_id"`
+	Issue_id int64   `json:"issue_id"`
+	Spent_on string  `json:"spent_on"`
+	Hours    float32 `json:"hours"`
+	Comments string  `json:"comments"`
+	User_id  int64   `json:"user_id"`
 }
-type TimeEntry struct {
+
+type TimeEntryRequest struct {
 	Time_entry TimeEntryInner `json:"time_entry"`
 }
+
+type TimeEntryResponse struct {
+	Id         int64     `json:"id"`
+	Project    NameAndId `json:"project"`
+	Issue      Id        `json:"issue"`
+	User       NameAndId `json:"user"`
+	Activity   NameAndId `json:"activity"`
+	Hours      float32   `json:"hours"`
+	Comments   string    `json:"comments"`
+	Spent_on   string    `json:"spent_on"`
+	Created_on string    `json:"created_on"`
+	Updated_on string    `json:"updated_on"`
+}
+
+type TimeEntryListResponse struct {
+	Time_entries []TimeEntryResponse `json:"time_entries"`
+}
+
 type UserInner struct {
 	Id            int64  `json:"id"`
 	Login         string `json:"login"`

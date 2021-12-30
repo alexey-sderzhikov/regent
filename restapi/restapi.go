@@ -24,6 +24,13 @@ type respStruct struct {
 	Status       string
 }
 
+type TimeEntryParam struct {
+	Limit      int
+	User_id    int64
+	Project_id int64
+	Spent_on   string
+}
+
 func NewRm(source string, apiKey string) (*RmClient, error) {
 	r := &RmClient{}
 
@@ -134,8 +141,8 @@ func (r RmClient) GetIssues(projectId int64) (IssueList, error) {
 
 }
 
-func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, hours int) (string, error) {
-	timeEntry := TimeEntry{
+func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, hours float32) (string, error) {
+	timeEntry := TimeEntryRequest{
 		Time_entry: TimeEntryInner{
 			Issue_id: issueId,
 			Spent_on: date,
@@ -152,7 +159,6 @@ func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, ho
 
 	reqBody := bytes.NewBuffer(byteList)
 	req, err := r.makeRequest("POST", "/time_entries.json", nil, reqBody)
-	fmt.Print(req)
 	if err != nil {
 		return "", err
 	}
@@ -164,6 +170,37 @@ func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, ho
 
 	return resp.Status, nil
 
+}
+
+func (r RmClient) GetTimeEntryList(teparam TimeEntryParam) (TimeEntryListResponse, error) {
+	params := make([]string, 0)
+	if teparam.Limit != 0 {
+		params = append(params, fmt.Sprintf("&limit=%v", teparam.Limit))
+	}
+	if teparam.Project_id != 0 {
+		params = append(params, fmt.Sprintf("&project_id=%v", teparam.Project_id))
+	}
+	if teparam.User_id != 0 {
+		params = append(params, fmt.Sprintf("&user_id=%v", teparam.User_id))
+	}
+
+	req, err := r.makeRequest("GET", "/time_entries.json", params, nil)
+	if err != nil {
+		return TimeEntryListResponse{}, err
+	}
+
+	resp, err := r.doRequest(req)
+	if err != nil {
+		return TimeEntryListResponse{}, err
+	}
+
+	timeEntries := TimeEntryListResponse{}
+	err = json.Unmarshal(resp.ByteListBody, &timeEntries)
+	if err != nil {
+		return TimeEntryListResponse{}, err
+	}
+
+	return timeEntries, nil
 }
 
 // get user data from api key
@@ -181,7 +218,7 @@ func (r RmClient) getCurrentUser() (UserInner, error) {
 	userResp := User{}
 	err = json.Unmarshal(resp.ByteListBody, &userResp)
 	if err != nil {
-		return UserInner{}, nil
+		return UserInner{}, err
 	}
 
 	if userResp.User.Id == 0 {
