@@ -86,6 +86,7 @@ func (m model) viewIssues() string {
 	)
 	s += "\n"
 
+	var mainText string
 	for ind, i := range m.issues {
 		cursor := " "
 		subject := i.Subject
@@ -94,9 +95,10 @@ func (m model) viewIssues() string {
 			subject = currentLineStyle.Render(subject)
 		}
 
-		s += fmt.Sprintf("%s %s\n", cursor, subject)
+		mainText += fmt.Sprintf("%s %s\n", cursor, subject)
 	}
 
+	s += textStyle.Render(mainText)
 	s += helperText
 
 	return s

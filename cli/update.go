@@ -157,6 +157,9 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m.errorCreate(err)
 		}
 		m.status = status
+	case tea.KeyCtrlQ: // go to previos page
+		m.cursor = 0
+		m.crumbs, _ = m.crumbs.popPage() // go to previos page
 	case tea.KeyEsc: // escape programm
 		return m, tea.Quit
 	}
