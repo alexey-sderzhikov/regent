@@ -1,5 +1,6 @@
+#Descriprion
 Terminal base redmine client. Build with [charmbracelet/bubbletea](https://github.com/charmbracelet/bubbletea).
-#TODO:
+#TODO
 - Take key api from config file
 - Get all time entries 
 - Notify if no time entries yestarday
