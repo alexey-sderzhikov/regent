@@ -32,6 +32,7 @@ type IssueList struct {
 	Total_count int     `json:"total_count"`
 	Offset      int     `json:"offset"`
 	Limit       int     `json:"limit"`
+	Project_id  int64   `json:"project_id"`
 }
 
 type TimeEntryInner struct {

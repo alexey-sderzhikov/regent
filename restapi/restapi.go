@@ -24,6 +24,8 @@ type respStruct struct {
 	Status       string
 }
 
+type Params map[string]interface{}
+
 type TimeEntryParam struct {
 	Limit      int
 	User_id    int64
@@ -57,13 +59,18 @@ func NewRm(source string, apiKey string) (*RmClient, error) {
 	return r, nil
 }
 
-// create request with request type, url, body etc. before send to server
-func (r RmClient) makeRequest(reqType string, endPoint string, params []string, body io.Reader) (*http.Request, error) {
-	url := r.SourceUrl + endPoint + "?key=" + r.ApiKey
-
-	for _, p := range params {
-		url += p
+func (p Params) makeRequestParameters() string {
+	var params string
+	for key, value := range p {
+		params += "&" + key + "=" + fmt.Sprintf("%v", value)
 	}
+
+	return params
+}
+
+// create request with request type, url, body etc. before send to server
+func (r RmClient) makeRequest(reqType string, endPoint string, params string, body io.Reader) (*http.Request, error) {
+	url := r.SourceUrl + endPoint + "?key=" + r.ApiKey + params
 
 	req, err := http.NewRequest(reqType, url, body)
 	if err != nil {
@@ -88,6 +95,9 @@ func (r RmClient) doRequest(req *http.Request) (respStruct, error) {
 	if err != nil {
 		return respStruct{}, err
 	}
+	if respHttp.StatusCode < 200 || respHttp.StatusCode > 299 {
+		return respStruct{}, fmt.Errorf("status code not in 2xx range, url-%+v", req.URL)
+	}
 	resp.Status = respHttp.Status
 
 	return resp, nil
@@ -95,7 +105,7 @@ func (r RmClient) doRequest(req *http.Request) (respStruct, error) {
 
 // TODO add handling error status codes
 func (r RmClient) GetProjects() (ProjectList, error) {
-	req, err := r.makeRequest("GET", "/projects.json", nil, nil)
+	req, err := r.makeRequest("GET", "/projects.json", "", nil)
 	if err != nil {
 		return ProjectList{}, err
 	}
@@ -115,26 +125,32 @@ func (r RmClient) GetProjects() (ProjectList, error) {
 }
 
 // TODO add handling error status codes
-func (r RmClient) GetIssues(params []string) (IssueList, error) {
+func (r RmClient) GetIssues(params Params) (IssueList, error) {
 	// TODO extract struct with parameters for request, like GetTimeEntryList
-	req, err := r.makeRequest("GET", "/issues.json", params, nil)
+	p := params.makeRequestParameters()
+	req, err := r.makeRequest("GET", "/issues.json", p, nil)
 	if err != nil {
-		return IssueList{}, err
+		return IssueList{}, fmt.Errorf("error occured during creating request - %q", err)
 	}
 
 	resp, err := r.doRequest(req)
 	if err != nil {
-		return IssueList{}, err
+		return IssueList{}, fmt.Errorf("error occured during do request\n %q", err)
 	}
 
 	issues := IssueList{}
 	err = json.Unmarshal(resp.ByteListBody, &issues)
 	if err != nil {
-		return IssueList{}, err
+		return IssueList{}, fmt.Errorf("error occured during unmurshaling response from redmine server - %q\nResponse structure:\n%+v", err, resp)
+	}
+
+	var ok bool
+	issues.Project_id, ok = params["project_id"].(int64)
+	if !ok {
+		return IssueList{}, fmt.Errorf("error occured during convert %v (project id) to int64", params["project_id"])
 	}
 
 	return issues, nil
-
 }
 
 // TODO refactor params like GetTimeEntryList
@@ -155,7 +171,7 @@ func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, ho
 	}
 
 	reqBody := bytes.NewBuffer(byteList)
-	req, err := r.makeRequest("POST", "/time_entries.json", nil, reqBody)
+	req, err := r.makeRequest("POST", "/time_entries.json", "", reqBody)
 	if err != nil {
 		return "", err
 	}
@@ -169,19 +185,10 @@ func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, ho
 
 }
 
-func (r RmClient) GetTimeEntryList(teparam TimeEntryParam) (TimeEntryListResponse, error) {
-	params := make([]string, 0)
-	if teparam.Limit != 0 {
-		params = append(params, fmt.Sprintf("&limit=%v", teparam.Limit))
-	}
-	if teparam.Project_id != 0 {
-		params = append(params, fmt.Sprintf("&project_id=%v", teparam.Project_id))
-	}
-	if teparam.User_id != 0 {
-		params = append(params, fmt.Sprintf("&user_id=%v", teparam.User_id))
-	}
+func (r RmClient) GetTimeEntryList(params Params) (TimeEntryListResponse, error) {
+	p := params.makeRequestParameters()
 
-	req, err := r.makeRequest("GET", "/time_entries.json", params, nil)
+	req, err := r.makeRequest("GET", "/time_entries.json", p, nil)
 	if err != nil {
 		return TimeEntryListResponse{}, err
 	}
@@ -202,7 +209,7 @@ func (r RmClient) GetTimeEntryList(teparam TimeEntryParam) (TimeEntryListRespons
 
 // get user data from api key
 func (r RmClient) getCurrentUser() (UserInner, error) {
-	req, err := r.makeRequest("GET", "/users/current.json", nil, nil)
+	req, err := r.makeRequest("GET", "/users/current.json", "", nil)
 	if err != nil {
 		return UserInner{}, err
 	}

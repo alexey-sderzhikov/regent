@@ -28,9 +28,10 @@ var cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("201"))
 var currentLineStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Bold(true).MarginLeft(2)
 var crumbsStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
 var statusStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+var filterStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00a86b"))
 var errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 var textStyle = lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder())
-var helperText = "\n'Esc' - close; 'Ctrl+q' - go to previos page\n"
+var helperText = "\n'Esc' - close; 'Ctrl + Q' - previos page\n'Left/Right' - show next/previos elements\n"
 
 func (m model) View() string {
 	switch m.crumbs.getCurrentPage() {
@@ -78,7 +79,7 @@ func (m model) viewProjects() string {
 
 func (m model) viewIssues() string {
 	s := titleStyle.Render(fmt.Sprintf(
-		"Issues (%v) project's - %q", m.issues.Total_count, m.issues.Issues[0].Project.Name),
+		"Issues (%v) project's #%v", m.issues.Total_count, m.issues.Project_id),
 	)
 	s += "\n"
 	s += crumbsStyle.Render(
@@ -88,24 +89,31 @@ func (m model) viewIssues() string {
 
 	var mainText string
 	mainText += fmt.Sprintf(
-		"Issues from %v to %v. Total issues - %v\n\n",
-		m.issues.Offset,
+		"Show from %v to %v issues. Total - %v\n",
+		m.issues.Offset+1,
 		m.issues.Offset+m.issues.Limit,
 		m.issues.Total_count,
 	)
-	for ind, i := range m.issues.Issues {
-		cursor := " "
-		subject := i.Subject
-		if m.cursor == ind {
-			cursor = cursorStyle.Render(">")
-			subject = currentLineStyle.Render(subject)
-		}
+	mainText += filterStyle.Render(fmt.Sprintf("Issues for me: %v", m.filters.for_me))
+	mainText += "\n\n"
+	if len(m.issues.Issues) == 0 {
+		mainText += "None suitable issues\n"
+	} else {
+		for ind, i := range m.issues.Issues {
+			cursor := " "
+			subject := i.Subject
+			if m.cursor == ind {
+				cursor = cursorStyle.Render(">")
+				subject = currentLineStyle.Render(subject)
+			}
 
-		mainText += fmt.Sprintf("%s %s\n", cursor, subject)
+			mainText += fmt.Sprintf("%s %s\n", cursor, subject)
+		}
 	}
 
 	s += textStyle.Render(mainText)
 	s += helperText
+	s += "'Ctrl + T' - show only my issues, 'Ctrl + A' - show my time entries"
 
 	return s
 }

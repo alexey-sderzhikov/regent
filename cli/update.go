@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -71,10 +70,14 @@ func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter: // go to project issues
 		var err error
-		project := m.projects[m.cursor]
+		projectId := m.projects[m.cursor].Id
 
-		params := make([]string, 0)
-		params = append(params, fmt.Sprintf("&project_id=%v", project.Id))
+		params := make(restapi.Params, 0)
+		params["project_id"] = projectId
+
+		if m.filters.for_me {
+			params["assigned_to_id"] = "me"
+		}
 
 		m.issues, err = m.redmineClient.GetIssues(params)
 		if err != nil {
@@ -92,6 +95,7 @@ func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// TODO refactoring pagination switching
 // update logic if key tap on "issues" page
 func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
@@ -100,14 +104,22 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.crumbs = m.crumbs.addPage(INPUT_TIME_ENTRY)
 	case tea.KeyCtrlQ: // go to previos page
 		m.cursor = 0
-		m.crumbs, _ = m.crumbs.popPage() // go to previos page
-	case tea.KeyCtrlA:
-		p := restapi.TimeEntryParam{
-			Limit:   10,
-			User_id: m.redmineClient.User.Id,
+		m.crumbs, _ = m.crumbs.popPage()
+
+		projects, err := m.redmineClient.GetProjects()
+		if err != nil {
+			return m.errorCreate(err)
 		}
 
-		te, err := m.redmineClient.GetTimeEntryList(p)
+		m.projects = projects.Projects
+		m.objectCount = len(m.projects)
+	case tea.KeyCtrlA:
+		params := make(restapi.Params, 0)
+
+		params["limit"] = 10
+		params["user_id"] = m.redmineClient.User.Id
+
+		te, err := m.redmineClient.GetTimeEntryList(params)
 		if err != nil {
 			m.errorCreate(err)
 		}
@@ -118,32 +130,57 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.cursor = 0
 		m.crumbs = m.crumbs.addPage(TIME_ENTRIES)
 	case tea.KeyRight: // go to next set of issues
-		var err error
-		project := m.issues.Issues[0].Project
-
-		params := make([]string, 0)
-		params = append(params, fmt.Sprintf("&project_id=%v", project.Id))
-		params = append(params, fmt.Sprintf("&limit=%v", m.issues.Limit))
 		if m.issues.Offset+m.issues.Limit < m.issues.Total_count {
-			params = append(params, fmt.Sprintf("&offset=%v", m.issues.Offset+m.issues.Limit))
-		}
+			var err error
 
-		m.issues, err = m.redmineClient.GetIssues(params)
-		if err != nil {
-			return m.errorCreate(err)
-		}
+			params := make(restapi.Params, 0)
+			params["project_id"] = m.issues.Project_id
+			params["limit"] = m.issues.Limit
+			params["offset"] = m.issues.Offset + m.issues.Limit
 
-		m.objectCount = len(m.issues.Issues)
-		m.cursor = 0
+			if m.filters.for_me {
+				params["assigned_to_id"] = "me"
+			}
+
+			m.issues, err = m.redmineClient.GetIssues(params)
+			if err != nil {
+				return m.errorCreate(err)
+			}
+
+			m.objectCount = len(m.issues.Issues)
+			m.cursor = 0
+		}
 	case tea.KeyLeft: // go to previos set of issues
-		var err error
-		project := m.issues.Issues[0].Project
+		if m.issues.Offset-m.issues.Limit >= 0 {
+			var err error
 
-		params := make([]string, 0)
-		params = append(params, fmt.Sprintf("&project_id=%v", project.Id))
-		params = append(params, fmt.Sprintf("&limit=%v", m.issues.Limit))
-		if m.issues.Offset-m.issues.Limit > 0 {
-			params = append(params, fmt.Sprintf("&offset=%v", m.issues.Offset-m.issues.Limit))
+			params := make(restapi.Params, 0)
+			params["project_id"] = m.issues.Project_id
+			params["limit"] = m.issues.Limit
+			params["offset"] = m.issues.Offset - m.issues.Limit
+
+			if m.filters.for_me {
+				params["assigned_to_id"] = "me"
+			}
+
+			m.issues, err = m.redmineClient.GetIssues(params)
+			if err != nil {
+				return m.errorCreate(err)
+			}
+
+			m.objectCount = len(m.issues.Issues)
+			m.cursor = 0
+		}
+	case tea.KeyCtrlT:
+		var err error
+		m.filters.for_me = !m.filters.for_me
+
+		params := make(restapi.Params, 0)
+		params["project_id"] = m.issues.Project_id
+		params["limit"] = m.issues.Limit
+
+		if m.filters.for_me {
+			params["assigned_to_id"] = "me"
 		}
 
 		m.issues, err = m.redmineClient.GetIssues(params)

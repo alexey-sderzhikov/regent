@@ -25,8 +25,13 @@ type model struct {
 	objectCount   int
 	cursor        int
 	crumbs        pagesStack
+	filters       filterStruct
 	status        string
 	err           error
+}
+
+type filterStruct struct {
+	for_me bool
 }
 
 type pagesStack []string
@@ -78,6 +83,8 @@ func initialModel() (model, error) {
 	m.inputs[2] = initialHoursInput()
 
 	m.focusIndex = 0
+
+	m.filters.for_me = false
 
 	return m, nil
 }
