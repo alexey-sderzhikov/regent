@@ -1,4 +1,4 @@
-# Descriprion
+# Description
 Terminal base redmine client. Build with [charmbracelet/bubbletea](https://github.com/charmbracelet/bubbletea).
 # TODO
 - Take key api from config file
