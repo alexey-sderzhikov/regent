@@ -78,7 +78,7 @@ func (m model) viewProjects() string {
 
 func (m model) viewIssues() string {
 	s := titleStyle.Render(fmt.Sprintf(
-		"Issues project's - %q", m.issues[0].Project.Name),
+		"Issues (%v) project's - %q", m.issues.Total_count, m.issues.Issues[0].Project.Name),
 	)
 	s += "\n"
 	s += crumbsStyle.Render(
@@ -87,7 +87,13 @@ func (m model) viewIssues() string {
 	s += "\n"
 
 	var mainText string
-	for ind, i := range m.issues {
+	mainText += fmt.Sprintf(
+		"Issues from %v to %v. Total issues - %v\n\n",
+		m.issues.Offset,
+		m.issues.Offset+m.issues.Limit,
+		m.issues.Total_count,
+	)
+	for ind, i := range m.issues.Issues {
 		cursor := " "
 		subject := i.Subject
 		if m.cursor == ind {
@@ -139,8 +145,11 @@ func (m model) viewInputTimeEntry() string {
 		m.crumbs.printStack(),
 	)
 
-	s += fmt.Sprint(
-		"\nText comment to time entry:\n",
+	s += "\n"
+
+	var mainText string
+	mainText += fmt.Sprint(
+		"Text comment to time entry:\n",
 		m.inputs[0].View(),
 		"\nText date:\n",
 		m.inputs[1].View(),
@@ -154,6 +163,7 @@ func (m model) viewInputTimeEntry() string {
 		s += "\n"
 	}
 
+	s += textStyle.Render(mainText)
 	s += helperText
 
 	return s

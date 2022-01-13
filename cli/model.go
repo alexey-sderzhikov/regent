@@ -18,7 +18,7 @@ type errMsg error
 type model struct {
 	redmineClient *restapi.RmClient
 	projects      []restapi.Project
-	issues        []restapi.Issue
+	issues        restapi.IssueList
 	timeEntries   []restapi.TimeEntryResponse
 	inputs        []textinput.Model
 	focusIndex    int
@@ -103,8 +103,8 @@ func initialCommentInput() textinput.Model {
 	ti := textinput.NewModel()
 	ti.Placeholder = "Some comment"
 	ti.Focus()
-	ti.CharLimit = 100
-	ti.Width = 20
+	ti.CharLimit = 254
+	ti.Width = 30
 
 	return ti
 }

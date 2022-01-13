@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -69,15 +70,18 @@ func (m model) navigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter: // go to project issues
+		var err error
 		project := m.projects[m.cursor]
 
-		issues, err := m.redmineClient.GetIssues(project.Id)
+		params := make([]string, 0)
+		params = append(params, fmt.Sprintf("&project_id=%v", project.Id))
+
+		m.issues, err = m.redmineClient.GetIssues(params)
 		if err != nil {
 			return m.errorCreate(err)
 		}
 
-		m.issues = issues.Issues
-		m.objectCount = len(m.issues)
+		m.objectCount = len(m.issues.Issues)
 
 		m.cursor = 0
 		m.crumbs = m.crumbs.addPage(ISSUES)
@@ -103,18 +107,52 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			User_id: m.redmineClient.User.Id,
 		}
 
-		if len(m.timeEntries) == 0 {
-			te, err := m.redmineClient.GetTimeEntryList(p)
-			if err != nil {
-				m.errorCreate(err)
-			}
-
-			m.timeEntries = te.Time_entries
-			m.objectCount = len(m.timeEntries)
+		te, err := m.redmineClient.GetTimeEntryList(p)
+		if err != nil {
+			m.errorCreate(err)
 		}
+
+		m.timeEntries = te.Time_entries
+		m.objectCount = len(m.timeEntries)
 
 		m.cursor = 0
 		m.crumbs = m.crumbs.addPage(TIME_ENTRIES)
+	case tea.KeyRight: // go to next set of issues
+		var err error
+		project := m.issues.Issues[0].Project
+
+		params := make([]string, 0)
+		params = append(params, fmt.Sprintf("&project_id=%v", project.Id))
+		params = append(params, fmt.Sprintf("&limit=%v", m.issues.Limit))
+		if m.issues.Offset+m.issues.Limit < m.issues.Total_count {
+			params = append(params, fmt.Sprintf("&offset=%v", m.issues.Offset+m.issues.Limit))
+		}
+
+		m.issues, err = m.redmineClient.GetIssues(params)
+		if err != nil {
+			return m.errorCreate(err)
+		}
+
+		m.objectCount = len(m.issues.Issues)
+		m.cursor = 0
+	case tea.KeyLeft: // go to previos set of issues
+		var err error
+		project := m.issues.Issues[0].Project
+
+		params := make([]string, 0)
+		params = append(params, fmt.Sprintf("&project_id=%v", project.Id))
+		params = append(params, fmt.Sprintf("&limit=%v", m.issues.Limit))
+		if m.issues.Offset-m.issues.Limit > 0 {
+			params = append(params, fmt.Sprintf("&offset=%v", m.issues.Offset-m.issues.Limit))
+		}
+
+		m.issues, err = m.redmineClient.GetIssues(params)
+		if err != nil {
+			return m.errorCreate(err)
+		}
+
+		m.objectCount = len(m.issues.Issues)
+		m.cursor = 0
 	default:
 		return m.navigation(msg)
 	}
@@ -140,7 +178,7 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.inputs[m.focusIndex].Focus()
 		}
 	case tea.KeyEnter: // create time entire
-		issue := m.issues[m.cursor]
+		issue := m.issues.Issues[m.cursor]
 
 		hours, err := strconv.ParseFloat(m.inputs[2].Value(), 32) // convert input hours string to float32
 		if err != nil {

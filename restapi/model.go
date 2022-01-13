@@ -28,7 +28,10 @@ type Issue struct {
 }
 
 type IssueList struct {
-	Issues []Issue `json:"issues"`
+	Issues      []Issue `json:"issues"`
+	Total_count int     `json:"total_count"`
+	Offset      int     `json:"offset"`
+	Limit       int     `json:"limit"`
 }
 
 type TimeEntryInner struct {

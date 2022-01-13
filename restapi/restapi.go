@@ -115,13 +115,9 @@ func (r RmClient) GetProjects() (ProjectList, error) {
 }
 
 // TODO add handling error status codes
-func (r RmClient) GetIssues(projectId int64) (IssueList, error) {
-	var projectIdParam string
-	if projectId != 0 {
-		projectIdParam = fmt.Sprintf("&project_id=%v", projectId)
-	}
-
-	req, err := r.makeRequest("GET", "/issues.json", []string{projectIdParam}, nil)
+func (r RmClient) GetIssues(params []string) (IssueList, error) {
+	// TODO extract struct with parameters for request, like GetTimeEntryList
+	req, err := r.makeRequest("GET", "/issues.json", params, nil)
 	if err != nil {
 		return IssueList{}, err
 	}
@@ -141,6 +137,7 @@ func (r RmClient) GetIssues(projectId int64) (IssueList, error) {
 
 }
 
+// TODO refactor params like GetTimeEntryList
 func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, hours float32) (string, error) {
 	timeEntry := TimeEntryRequest{
 		Time_entry: TimeEntryInner{
