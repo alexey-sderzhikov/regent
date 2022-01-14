@@ -2,9 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/alexey-sderzhikov/regent/restapi"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -62,9 +64,24 @@ func (p pagesStack) getCurrentPage() string {
 func initialModel() (model, error) {
 	m := model{}
 
-	rc, err := restapi.NewRm("", "")
+	err := godotenv.Load(".env")
 	if err != nil {
-		return model{}, err
+		return model{}, fmt.Errorf("error occure during reading .env file\n%q", err)
+	}
+
+	apiKey := os.Getenv("USER_API_KEY")
+	if apiKey == "" {
+		return model{}, fmt.Errorf("api key in .env file is nil")
+	}
+
+	source := os.Getenv("SOURCE")
+	if source == "" {
+		return model{}, fmt.Errorf("source in .env file is nil")
+	}
+
+	rc, err := restapi.NewRm(source, apiKey)
+	if err != nil {
+		return model{}, fmt.Errorf("error occure during creating redmine client object\n%q", err)
 	}
 	m.redmineClient = rc
 

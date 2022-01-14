@@ -9,9 +9,6 @@ import (
 	"net/http"
 )
 
-const BERGEN_URL = "https://support.bergen.tech"
-const USER_API_KEY = "c370a381d4bc709c419094f8a63f78b64f7a1b56"
-
 type RmClient struct {
 	SourceUrl  string
 	ApiKey     string
@@ -36,17 +33,9 @@ type TimeEntryParam struct {
 func NewRm(source string, apiKey string) (*RmClient, error) {
 	r := &RmClient{}
 
-	if source == "" {
-		r.SourceUrl = BERGEN_URL
-	} else {
-		r.SourceUrl = source
-	}
+	r.SourceUrl = source
 
-	if apiKey == "" {
-		r.ApiKey = USER_API_KEY
-	} else {
-		r.ApiKey = apiKey
-	}
+	r.ApiKey = apiKey
 
 	r.HttpClient = &http.Client{}
 
