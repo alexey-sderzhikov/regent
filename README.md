@@ -3,7 +3,7 @@ Terminal base redmine client. Build with [charmbracelet/bubbletea](https://githu
 
 ## Installation
 1. Go in root project's directory `cd regent/` 
-2. Create .env file
+2. Create `.env` file
 3. Set two environment
 
 ```
