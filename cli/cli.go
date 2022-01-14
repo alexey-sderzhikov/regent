@@ -17,7 +17,7 @@ func Start() error {
 		return err
 	}
 
-	p := tea.NewProgram(m)
+	p := tea.NewProgram(m, tea.WithInputTTY(), tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		fmt.Printf("Alias, there's been an error: %v", err)
 		os.Exit(1)
