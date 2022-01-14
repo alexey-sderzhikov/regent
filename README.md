@@ -1,18 +1,18 @@
 ## Description
-Terminal base redmine client. Build with [charmbracelet/bubbletea](https://github.com/charmbracelet/bubbletea) and using [redmine API](https://www.redmine.org/projects/redmine/wiki/rest_api).
+Terminal base redmine client. Built with [charmbracelet/bubbletea](https://github.com/charmbracelet/bubbletea) and using [redmine API](https://www.redmine.org/projects/redmine/wiki/rest_api).
 
 ## Installation
-1. Go in root project's directory `cd regent/` 
+1. Go to root project's directory `cd regent/` 
 2. Create `.env` file
 3. Set two environment
 
 ```
 #/regent/.env
 SOURCE=https://redmine.source.com
-USER_API_KEY=my_user_api_key   
+USER_API_KEY=examplekey12345   
 ```
 
-*Note: You can find your user api key in redmaine->my account*
+*Note: You can find your user api key in redmine->my account*
 
 4. Run regent with `go run .` or build `go build` and run with `./regent`
 ## TODO
