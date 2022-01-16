@@ -126,7 +126,14 @@ func (m model) viewTimeEntries() string {
 
 	s += "\n"
 
-	for ind, te := range m.timeEntries {
+	var mainText string
+	mainText += fmt.Sprintf(
+		"Show from %v to %v issues. Total - %v\n",
+		m.timeEntries.Offset+1,
+		m.timeEntries.Offset+m.issues.Limit,
+		m.timeEntries.Total_count,
+	)
+	for ind, te := range m.timeEntries.Time_entries {
 		cursor := " "
 		spent_on := te.Spent_on
 		comment := te.Comments
@@ -140,9 +147,10 @@ func (m model) viewTimeEntries() string {
 			issueId = currentLineStyle.Render(issueId)
 		}
 
-		s += fmt.Sprintf("%s %s %s %s %s\n", cursor, spent_on, issueId, hours, comment)
+		mainText += fmt.Sprintf("%s %s %s %s %s\n", cursor, spent_on, issueId, hours, comment)
 	}
 
+	s += textStyle.Render(mainText)
 	s += helperText
 
 	return s

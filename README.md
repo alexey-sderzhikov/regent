@@ -17,9 +17,11 @@ USER_API_KEY=examplekey12345
 4. Run regent with `go run .` or build `go build` and run with `./regent`
 ## TODO
 - [x] Take key api from config file
-- [ ] Get all time entries 
+- [x] Get all time entries 
 - [ ] Notify if no time entries yestarday
 - [ ] Implement help element from charm library
 - [ ] Add spiner
 - [x] Get issues only current user
-- [x] Add pagination 
+- [x] Add pagination
+- [ ] Functional to add and change issues
+- [ ] Menu

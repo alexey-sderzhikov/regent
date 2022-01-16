@@ -62,6 +62,9 @@ type TimeEntryResponse struct {
 
 type TimeEntryListResponse struct {
 	Time_entries []TimeEntryResponse `json:"time_entries"`
+	Total_count  int                 `json:"total_count"`
+	Offset       int                 `json:"offset"`
+	Limit        int                 `json:"limit"`
 }
 
 type UserInner struct {

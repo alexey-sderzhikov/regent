@@ -21,12 +21,12 @@ type model struct {
 	redmineClient *restapi.RmClient
 	projects      []restapi.Project
 	issues        restapi.IssueList
-	timeEntries   []restapi.TimeEntryResponse
+	timeEntries   restapi.TimeEntryListResponse
 	inputs        []textinput.Model
-	focusIndex    int
-	objectCount   int
-	cursor        int
-	crumbs        pagesStack
+	focusIndex    int        // need for switch between input fields
+	objectCount   int        // need View for correct switch between elements
+	cursor        int        // current select line
+	crumbs        pagesStack // bread crumbs
 	filters       filterStruct
 	status        string
 	err           error

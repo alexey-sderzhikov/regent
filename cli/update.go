@@ -101,6 +101,7 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter: // go to creation new time entry for issue
 		m.inputs[1].SetValue(time.Now().Format("2006-01-02")) // set today date
+		m.inputs[2].SetValue("8")                             // set 8 hour
 		m.crumbs = m.crumbs.addPage(INPUT_TIME_ENTRY)
 	case tea.KeyCtrlQ: // go to previos page
 		m.cursor = 0
@@ -113,65 +114,22 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 		m.projects = projects.Projects
 		m.objectCount = len(m.projects)
-	case tea.KeyCtrlA:
+	case tea.KeyCtrlA: // show my time entries
+		var err error
 		params := make(restapi.Params, 0)
 
-		params["limit"] = 10
 		params["user_id"] = m.redmineClient.User.Id
 
-		te, err := m.redmineClient.GetTimeEntryList(params)
+		m.timeEntries, err = m.redmineClient.GetTimeEntryList(params)
 		if err != nil {
 			m.errorCreate(err)
 		}
 
-		m.timeEntries = te.Time_entries
-		m.objectCount = len(m.timeEntries)
+		m.objectCount = len(m.timeEntries.Time_entries)
 
 		m.cursor = 0
 		m.crumbs = m.crumbs.addPage(TIME_ENTRIES)
-	case tea.KeyRight: // go to next set of issues
-		if m.issues.Offset+m.issues.Limit < m.issues.Total_count {
-			var err error
-
-			params := make(restapi.Params, 0)
-			params["project_id"] = m.issues.Project_id
-			params["limit"] = m.issues.Limit
-			params["offset"] = m.issues.Offset + m.issues.Limit
-
-			if m.filters.for_me {
-				params["assigned_to_id"] = "me"
-			}
-
-			m.issues, err = m.redmineClient.GetIssues(params)
-			if err != nil {
-				return m.errorCreate(err)
-			}
-
-			m.objectCount = len(m.issues.Issues)
-			m.cursor = 0
-		}
-	case tea.KeyLeft: // go to previos set of issues
-		if m.issues.Offset-m.issues.Limit >= 0 {
-			var err error
-
-			params := make(restapi.Params, 0)
-			params["project_id"] = m.issues.Project_id
-			params["limit"] = m.issues.Limit
-			params["offset"] = m.issues.Offset - m.issues.Limit
-
-			if m.filters.for_me {
-				params["assigned_to_id"] = "me"
-			}
-
-			m.issues, err = m.redmineClient.GetIssues(params)
-			if err != nil {
-				return m.errorCreate(err)
-			}
-
-			m.objectCount = len(m.issues.Issues)
-			m.cursor = 0
-		}
-	case tea.KeyCtrlT:
+	case tea.KeyCtrlT: // filter -show only my issues
 		var err error
 		m.filters.for_me = !m.filters.for_me
 
@@ -190,6 +148,37 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 		m.objectCount = len(m.issues.Issues)
 		m.cursor = 0
+	case tea.KeyRight, tea.KeyLeft: // go to next or previous set of issues
+		var err error
+		params := make(restapi.Params, 0)
+
+		// if key right or left and have opportunity for pagination,
+		// then change 'offset' parameter
+		// else do nothing
+		if msg.Type == tea.KeyLeft && m.issues.Offset-m.issues.Limit >= 0 {
+			params["offset"] = m.issues.Offset - m.issues.Limit
+		} else if msg.Type == tea.KeyRight && m.issues.Offset+m.issues.Limit < m.issues.Total_count {
+			params["offset"] = m.issues.Offset + m.issues.Limit
+		} else {
+			return m, nil
+		}
+
+		params["project_id"] = m.issues.Project_id
+		params["limit"] = m.issues.Limit
+
+		if m.filters.for_me {
+			params["assigned_to_id"] = "me"
+		}
+
+		m.issues, err = m.redmineClient.GetIssues(params)
+		if err != nil {
+			return m.errorCreate(err)
+		}
+
+		m.objectCount = len(m.issues.Issues)
+		m.cursor = 0
+
+		return m, nil
 	default:
 		return m.navigation(msg)
 	}
@@ -250,6 +239,32 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) updateTimeEntries(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
+	case tea.KeyRight, tea.KeyLeft:
+		var err error
+		params := make(restapi.Params, 0)
+
+		// if key right or left and have opportunity for pagination,
+		// then change 'offset' parameter
+		// else do nothing
+		if msg.Type == tea.KeyLeft && m.timeEntries.Offset-m.timeEntries.Limit >= 0 {
+			params["offset"] = m.timeEntries.Offset - m.timeEntries.Limit
+		} else if msg.Type == tea.KeyRight && m.timeEntries.Offset+m.timeEntries.Limit < m.timeEntries.Total_count {
+			params["offset"] = m.timeEntries.Offset + m.timeEntries.Limit
+		} else {
+			return m, nil
+		}
+
+		params["limit"] = m.timeEntries.Limit
+
+		m.timeEntries, err = m.redmineClient.GetTimeEntryList(params)
+		if err != nil {
+			return m.errorCreate(err)
+		}
+
+		m.objectCount = len(m.timeEntries.Time_entries)
+		m.cursor = 0
+
+		return m, nil
 	default:
 		return m.navigation(msg)
 	}
