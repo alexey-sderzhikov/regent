@@ -16,8 +16,14 @@ func Start() error {
 	if err != nil {
 		return err
 	}
-
-	p := tea.NewProgram(m, tea.WithInputTTY(), tea.WithAltScreen())
+	var f *os.File
+	f, err = tea.LogToFile("logs", "debug")
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
+	defer f.Close()
+	p := tea.NewProgram(m, tea.WithInputTTY())
 	if err := p.Start(); err != nil {
 		fmt.Printf("Alias, there's been an error: %v", err)
 		os.Exit(1)

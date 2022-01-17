@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -69,11 +68,6 @@ func (m model) navigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // update logic if key tap on "projects" page
 func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
-	case tea.KeyRunes:
-		switch string(msg.Runes) {
-		default:
-			m.errorCreate(fmt.Errorf("windows key %v", msg.Runes))
-		}
 	case tea.KeyEnter: // go to project issues
 		var err error
 		projectId := m.projects[m.cursor].Id
