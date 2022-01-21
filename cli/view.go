@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -17,44 +18,46 @@ var border = lipgloss.Border{
 	BottomRight: "*",
 }
 
-var titleStyle = lipgloss.NewStyle().
-	BorderStyle(border).
-	Bold(true).
-	PaddingLeft(3).
-	PaddingRight(3).
-	Foreground(lipgloss.Color("#7D56F4"))
-
-var cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("201"))
-var currentLineStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Bold(true).MarginLeft(2)
-var crumbsStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
-var statusStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-var filterStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00a86b"))
-var errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
-var textStyle = lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder())
+var (
+	titleStyle       = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#7D56F4"))
+	cursorStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("201"))
+	currentLineStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Bold(true).MarginLeft(2)
+	crumbsStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
+	statusStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	filterStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#00a86b"))
+	errorStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+	textStyle        = lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder())
+)
 
 func (m model) View() string {
+	var header, body, tail string
+
+	header = crumbsStyle.Render(m.crumbs.printStack())
+
 	switch m.crumbs.getCurrentPage() {
 	case PROJECTS:
-		return m.viewProjects()
+		body = m.viewProjects()
 	case ISSUES:
-		return m.viewIssues()
+		body = m.viewIssues()
 	case INPUT_TIME_ENTRY:
-		return m.viewInputTimeEntry()
+		body = m.viewInputTimeEntry()
 	case TIME_ENTRIES:
-		return m.viewTimeEntries()
+		body = m.viewTimeEntries()
 	case ERROR:
-		return m.viewError()
+		body = m.viewError()
 	}
 
-	return "Cannot detect current page :("
+	tail = m.help.View(m.key)
+
+	if body == "" {
+		return "Cannot detect current page :("
+	}
+
+	return strings.Join([]string{header, body, tail}, "\n")
 }
 
 func (m model) viewProjects() string {
 	s := titleStyle.Render("Bergen Projects")
-	s += "\n"
-	s += crumbsStyle.Render(
-		m.crumbs.printStack(),
-	)
 
 	s += "\n"
 
@@ -70,8 +73,7 @@ func (m model) viewProjects() string {
 		mainText += fmt.Sprintf("%s %s\n", cursor, name)
 	}
 
-	s += textStyle.Render(mainText) + "\n"
-	s += m.help.View(m.key)
+	s += textStyle.Render(mainText)
 
 	return s
 }
@@ -80,10 +82,7 @@ func (m model) viewIssues() string {
 	s := titleStyle.Render(fmt.Sprintf(
 		"Issues (%v) project's #%v", m.issues.Total_count, m.issues.Project_id),
 	)
-	s += "\n"
-	s += crumbsStyle.Render(
-		m.crumbs.printStack(),
-	)
+
 	s += "\n"
 
 	var mainText string
@@ -110,17 +109,12 @@ func (m model) viewIssues() string {
 		}
 	}
 
-	s += textStyle.Render(mainText) + "\n"
-	s += m.help.View(m.key)
+	s += textStyle.Render(mainText)
 
 	return s
 }
 func (m model) viewTimeEntries() string {
 	s := titleStyle.Render(fmt.Sprintf("%s Time Entries", m.redmineClient.User.Lastname))
-	s += "\n"
-	s += crumbsStyle.Render(
-		m.crumbs.printStack(),
-	)
 
 	s += "\n"
 
@@ -148,20 +142,13 @@ func (m model) viewTimeEntries() string {
 		mainText += fmt.Sprintf("%s %s %s %s %s\n", cursor, spent_on, issueId, hours, comment)
 	}
 
-	s += textStyle.Render(mainText) + "\n"
-	s += m.help.View(m.key)
+	s += textStyle.Render(mainText)
 
 	return s
 }
 
 func (m model) viewInputTimeEntry() string {
-	s := crumbsStyle.Render(
-		m.crumbs.printStack(),
-	)
-
-	s += "\n"
-
-	var mainText string
+	var mainText, s string
 	mainText += fmt.Sprint(
 		"Text comment to time entry:\n",
 		m.inputs[0].View(),
@@ -177,21 +164,15 @@ func (m model) viewInputTimeEntry() string {
 		s += "\n"
 	}
 
-	s += textStyle.Render(mainText) + "\n"
-	s += m.help.View(m.key)
+	s += textStyle.Render(mainText)
 
 	return s
 }
 
 func (m model) viewError() string {
-	s := crumbsStyle.Render(
-		m.crumbs.printStack(),
-	)
 
-	s += "\n\n"
+	s := "\n\n"
 	s += errorStyle.Render("Error! - " + fmt.Sprint(m.err))
-	s += "\n"
 
-	s += m.help.View(m.key)
 	return s
 }
