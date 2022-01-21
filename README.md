@@ -19,9 +19,10 @@ USER_API_KEY=examplekey12345
 - [x] Take key api from config file
 - [x] Get all time entries 
 - [ ] Notify if no time entries yestarday
-- [ ] Implement help element from charm library
+- [ ] Implement help element from bubble library
 - [ ] Add spiner
 - [x] Get issues only current user
 - [x] Add pagination
 - [ ] Functional to add and change issues
 - [ ] Menu
+- [ ] View port for viewing issue and another objects

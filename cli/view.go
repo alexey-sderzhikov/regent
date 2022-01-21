@@ -31,7 +31,6 @@ var statusStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 var filterStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00a86b"))
 var errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 var textStyle = lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder())
-var helperText = "\n'Esc' - close; 'Ctrl + Q' - previos page\n'Left/Right' - show next/previos elements\n"
 
 func (m model) View() string {
 	switch m.crumbs.getCurrentPage() {
@@ -71,8 +70,8 @@ func (m model) viewProjects() string {
 		mainText += fmt.Sprintf("%s %s\n", cursor, name)
 	}
 
-	s += textStyle.Render(mainText)
-	s += helperText
+	s += textStyle.Render(mainText) + "\n"
+	s += m.help.View(m.key)
 
 	return s
 }
@@ -111,9 +110,8 @@ func (m model) viewIssues() string {
 		}
 	}
 
-	s += textStyle.Render(mainText)
-	s += helperText
-	s += "'Ctrl + T' - show only my issues, 'Ctrl + A' - show my time entries"
+	s += textStyle.Render(mainText) + "\n"
+	s += m.help.View(m.key)
 
 	return s
 }
@@ -150,8 +148,8 @@ func (m model) viewTimeEntries() string {
 		mainText += fmt.Sprintf("%s %s %s %s %s\n", cursor, spent_on, issueId, hours, comment)
 	}
 
-	s += textStyle.Render(mainText)
-	s += helperText
+	s += textStyle.Render(mainText) + "\n"
+	s += m.help.View(m.key)
 
 	return s
 }
@@ -179,8 +177,8 @@ func (m model) viewInputTimeEntry() string {
 		s += "\n"
 	}
 
-	s += textStyle.Render(mainText)
-	s += helperText
+	s += textStyle.Render(mainText) + "\n"
+	s += m.help.View(m.key)
 
 	return s
 }
@@ -194,6 +192,6 @@ func (m model) viewError() string {
 	s += errorStyle.Render("Error! - " + fmt.Sprint(m.err))
 	s += "\n"
 
-	s += helperText
+	s += m.help.View(m.key)
 	return s
 }
