@@ -196,6 +196,11 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
+	// clear status if it not empty while any key enter
+	if m.status != "" {
+		m.status = ""
+	}
+
 	switch msg.Type {
 	case tea.KeyUp: // go to upstair input field
 		if m.focusIndex > 0 {
@@ -211,6 +216,8 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyEnter: // create time entire
 		issue := m.issues.Issues[m.cursor]
+		date := m.inputs[1].Value()    // input date
+		comment := m.inputs[0].Value() // input comment
 
 		hours, err := strconv.ParseFloat(m.inputs[2].Value(), 32) // convert input hours string to float32
 		if err != nil {
@@ -219,14 +226,16 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 		status, err := m.redmineClient.CreateTimeEntry(
 			issue.Id,
-			m.inputs[1].Value(), // input date
-			m.inputs[0].Value(), // input comment
+			date,
+			comment,
 			float32(hours),
 		)
+
 		if err != nil {
 			return m.errorCreate(err)
 		}
-		m.status = status
+
+		m.status = status + "time entry at date " + date
 	case tea.KeyCtrlQ: // go to previos page
 		m.cursor = 0
 		m.crumbs, _ = m.crumbs.popPage() // go to previos page
