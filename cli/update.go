@@ -196,7 +196,7 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	// clear status if it not empty while any key enter
+	// clear status if it not empty while any key
 	if m.status != "" {
 		m.status = ""
 	}
