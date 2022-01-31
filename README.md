@@ -16,7 +16,6 @@ USER_API_KEY=examplekey12345
 
 4. Run regent with `go run .` or build `go build` and run with `./regent`
 ## TODO
-- [ ] !!Clear status after create time entry
 - [ ] Notify if no time entries yestarday
 - [ ] Implement help element from bubble library
 - [ ] Add spiner
