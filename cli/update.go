@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	PROJECTS         = "projects"
-	ISSUES           = "issues"
-	INPUT_TIME_ENTRY = "input_time_entry"
-	ERROR            = "error"
-	TIME_ENTRIES     = "time_entries"
+	projectsPage       = "projects"
+	issuesPage         = "issues"
+	inputTimeEntryPage = "input_time_entry"
+	errPage            = "error"
+	timeEntriesPage    = "time_entries"
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -24,15 +24,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.help.Width = msg.Width
 	case tea.KeyMsg:
 		switch m.crumbs.getCurrentPage() {
-		case PROJECTS:
+		case projectsPage:
 			return m.updateProjects(msg)
-		case ISSUES:
+		case issuesPage:
 			return m.updateIssues(msg)
-		case INPUT_TIME_ENTRY:
+		case inputTimeEntryPage:
 			return m.updateInputTimeEntry(msg)
-		case TIME_ENTRIES:
+		case timeEntriesPage:
 			return m.updateTimeEntries(msg)
-		case ERROR:
+		case errPage:
 			return m.updateError(msg)
 		}
 	case errMsg:
@@ -76,12 +76,12 @@ func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter: // go to project issues
 		var err error
-		projectId := m.projects[m.cursor].Id
+		projectID := m.projects[m.cursor].ID
 
 		params := make(restapi.Params, 0)
-		params["project_id"] = projectId
+		params["project_id"] = projectID
 
-		if m.filters.for_me {
+		if m.filters.forMe {
 			params["assigned_to_id"] = "me"
 		}
 
@@ -93,7 +93,7 @@ func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.objectCount = len(m.issues.Issues)
 
 		m.cursor = 0
-		m.crumbs = m.crumbs.addPage(ISSUES)
+		m.crumbs = m.crumbs.addPage(issuesPage)
 	default:
 		return m.navigation(msg)
 	}
@@ -108,7 +108,7 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyEnter: // go to creation new time entry for issue
 		m.inputs[1].SetValue(time.Now().Format("2006-01-02")) // set today date
 		m.inputs[2].SetValue("8")                             // set 8 hour
-		m.crumbs = m.crumbs.addPage(INPUT_TIME_ENTRY)
+		m.crumbs = m.crumbs.addPage(inputTimeEntryPage)
 	case tea.KeyCtrlQ: // go to previos page
 		m.cursor = 0
 		m.crumbs, _ = m.crumbs.popPage()
@@ -124,26 +124,26 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		var err error
 		params := make(restapi.Params, 0)
 
-		params["user_id"] = m.redmineClient.User.Id
+		params["user_id"] = m.redmineClient.User.ID
 
 		m.timeEntries, err = m.redmineClient.GetTimeEntryList(params)
 		if err != nil {
 			m.errorCreate(err)
 		}
 
-		m.objectCount = len(m.timeEntries.Time_entries)
+		m.objectCount = len(m.timeEntries.TimeEntries)
 
 		m.cursor = 0
-		m.crumbs = m.crumbs.addPage(TIME_ENTRIES)
+		m.crumbs = m.crumbs.addPage(timeEntriesPage)
 	case tea.KeyCtrlT: // filter -show only my issues
 		var err error
-		m.filters.for_me = !m.filters.for_me
+		m.filters.forMe = !m.filters.forMe
 
 		params := make(restapi.Params, 0)
-		params["project_id"] = m.issues.Project_id
+		params["project_id"] = m.issues.ProjectID
 		params["limit"] = m.issues.Limit
 
-		if m.filters.for_me {
+		if m.filters.forMe {
 			params["assigned_to_id"] = "me"
 		}
 
@@ -163,16 +163,16 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// else do nothing
 		if msg.Type == tea.KeyLeft && m.issues.Offset-m.issues.Limit >= 0 {
 			params["offset"] = m.issues.Offset - m.issues.Limit
-		} else if msg.Type == tea.KeyRight && m.issues.Offset+m.issues.Limit < m.issues.Total_count {
+		} else if msg.Type == tea.KeyRight && m.issues.Offset+m.issues.Limit < m.issues.TotalCount {
 			params["offset"] = m.issues.Offset + m.issues.Limit
 		} else {
 			return m, nil
 		}
 
-		params["project_id"] = m.issues.Project_id
+		params["project_id"] = m.issues.ProjectID
 		params["limit"] = m.issues.Limit
 
-		if m.filters.for_me {
+		if m.filters.forMe {
 			params["assigned_to_id"] = "me"
 		}
 
@@ -225,7 +225,7 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 		status, err := m.redmineClient.CreateTimeEntry(
-			issue.Id,
+			issue.ID,
 			date,
 			comment,
 			float32(hours),
@@ -263,7 +263,7 @@ func (m model) updateTimeEntries(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// else do nothing
 		if msg.Type == tea.KeyLeft && m.timeEntries.Offset-m.timeEntries.Limit >= 0 {
 			params["offset"] = m.timeEntries.Offset - m.timeEntries.Limit
-		} else if msg.Type == tea.KeyRight && m.timeEntries.Offset+m.timeEntries.Limit < m.timeEntries.Total_count {
+		} else if msg.Type == tea.KeyRight && m.timeEntries.Offset+m.timeEntries.Limit < m.timeEntries.TotalCount {
 			params["offset"] = m.timeEntries.Offset + m.timeEntries.Limit
 		} else {
 			return m, nil
@@ -276,7 +276,7 @@ func (m model) updateTimeEntries(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m.errorCreate(err)
 		}
 
-		m.objectCount = len(m.timeEntries.Time_entries)
+		m.objectCount = len(m.timeEntries.TimeEntries)
 		m.cursor = 0
 
 		return m, nil
@@ -305,6 +305,6 @@ func (m model) updateError(msg tea.Msg) (model, tea.Cmd) {
 // creating error before view error page
 func (m model) errorCreate(err error) (model, tea.Cmd) {
 	m.err = err
-	m.crumbs = m.crumbs.addPage(ERROR)
+	m.crumbs = m.crumbs.addPage(errPage)
 	return m, func() tea.Msg { return errMsg(err) }
 }

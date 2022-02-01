@@ -35,15 +35,15 @@ func (m model) View() string {
 	header = crumbsStyle.Render(m.crumbs.printStack())
 
 	switch m.crumbs.getCurrentPage() {
-	case PROJECTS:
+	case projectsPage:
 		body = m.viewProjects()
-	case ISSUES:
+	case issuesPage:
 		body = m.viewIssues()
-	case INPUT_TIME_ENTRY:
+	case inputTimeEntryPage:
 		body = m.viewInputTimeEntry()
-	case TIME_ENTRIES:
+	case timeEntriesPage:
 		body = m.viewTimeEntries()
-	case ERROR:
+	case errPage:
 		body = m.viewError()
 	}
 
@@ -80,7 +80,7 @@ func (m model) viewProjects() string {
 
 func (m model) viewIssues() string {
 	s := titleStyle.Render(fmt.Sprintf(
-		"Issues (%v) project's #%v", m.issues.Total_count, m.issues.Project_id),
+		"Issues (%v) project's #%v", m.issues.TotalCount, m.issues.ProjectID),
 	)
 
 	s += "\n"
@@ -90,9 +90,9 @@ func (m model) viewIssues() string {
 		"Show from %v to %v issues. Total - %v\n",
 		m.issues.Offset+1,
 		m.issues.Offset+m.issues.Limit,
-		m.issues.Total_count,
+		m.issues.TotalCount,
 	)
-	mainText += filterStyle.Render(fmt.Sprintf("Issues for me: %v", m.filters.for_me))
+	mainText += filterStyle.Render(fmt.Sprintf("Issues for me: %v", m.filters.forMe))
 	mainText += "\n\n"
 	if len(m.issues.Issues) == 0 {
 		mainText += "None suitable issues\n"
@@ -123,23 +123,23 @@ func (m model) viewTimeEntries() string {
 		"Show from %v to %v issues. Total - %v\n",
 		m.timeEntries.Offset+1,
 		m.timeEntries.Offset+m.issues.Limit,
-		m.timeEntries.Total_count,
+		m.timeEntries.TotalCount,
 	)
-	for ind, te := range m.timeEntries.Time_entries {
+	for ind, te := range m.timeEntries.TimeEntries {
 		cursor := " "
-		spent_on := te.Spent_on
+		spentOn := te.SpentOn
 		comment := te.Comments
 		hours := fmt.Sprintf("%v", te.Hours)
-		issueId := fmt.Sprintf("%v", te.Issue.Id)
+		issueID := fmt.Sprintf("%v", te.Issue)
 		if m.cursor == ind {
 			cursor = cursorStyle.Render(">")
-			spent_on = currentLineStyle.Render(spent_on)
+			spentOn = currentLineStyle.Render(spentOn)
 			comment = currentLineStyle.Render(comment)
 			hours = currentLineStyle.Render(hours)
-			issueId = currentLineStyle.Render(issueId)
+			issueID = currentLineStyle.Render(issueID)
 		}
 
-		mainText += fmt.Sprintf("%s %s %s %s %s\n", cursor, spent_on, issueId, hours, comment)
+		mainText += fmt.Sprintf("%s %s %s %s %s\n", cursor, spentOn, issueID, hours, comment)
 	}
 
 	s += textStyle.Render(mainText)

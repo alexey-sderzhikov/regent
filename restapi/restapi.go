@@ -10,10 +10,10 @@ import (
 )
 
 type RmClient struct {
-	SourceUrl  string
-	ApiKey     string
+	SourceURL  string
+	APIKey     string
 	User       UserInner
-	HttpClient *http.Client
+	HTTPClient *http.Client
 }
 
 type respStruct struct {
@@ -24,20 +24,20 @@ type respStruct struct {
 type Params map[string]interface{}
 
 type TimeEntryParam struct {
-	Limit      int
-	User_id    int64
-	Project_id int64
-	Spent_on   string
+	Limit     int
+	UserID    int64
+	ProjectID int64
+	SpentOn   string
 }
 
 func NewRm(source string, apiKey string) (*RmClient, error) {
 	r := &RmClient{}
 
-	r.SourceUrl = source
+	r.SourceURL = source
 
-	r.ApiKey = apiKey
+	r.APIKey = apiKey
 
-	r.HttpClient = &http.Client{}
+	r.HTTPClient = &http.Client{}
 
 	var err error
 	r.User, err = r.getCurrentUser()
@@ -59,7 +59,7 @@ func (p Params) makeRequestParameters() string {
 
 // create request with request type, url, body etc. before send to server
 func (r RmClient) makeRequest(reqType string, endPoint string, params string, body io.Reader) (*http.Request, error) {
-	url := r.SourceUrl + endPoint + "?key=" + r.ApiKey + params
+	url := r.SourceURL + endPoint + "?key=" + r.APIKey + params
 
 	req, err := http.NewRequest(reqType, url, body)
 	if err != nil {
@@ -73,21 +73,22 @@ func (r RmClient) makeRequest(reqType string, endPoint string, params string, bo
 
 // send before created request to server and return respons like bytes slice
 func (r RmClient) doRequest(req *http.Request) (respStruct, error) {
-	respHttp, err := r.HttpClient.Do(req)
+	respHTTP, err := r.HTTPClient.Do(req)
 	if err != nil {
 		return respStruct{}, err
 	}
 
-	defer respHttp.Body.Close()
+	defer respHTTP.Body.Close()
+
 	resp := respStruct{}
-	resp.ByteListBody, err = ioutil.ReadAll(respHttp.Body)
+	resp.ByteListBody, err = ioutil.ReadAll(respHTTP.Body)
 	if err != nil {
 		return respStruct{}, err
 	}
-	if respHttp.StatusCode < 200 || respHttp.StatusCode > 299 {
+	if respHTTP.StatusCode < 200 || respHTTP.StatusCode > 299 {
 		return respStruct{}, fmt.Errorf("status code not in 2xx range, url-%+v", req.URL)
 	}
-	resp.Status = respHttp.Status
+	resp.Status = respHTTP.Status
 
 	return resp, nil
 }
@@ -134,7 +135,7 @@ func (r RmClient) GetIssues(params Params) (IssueList, error) {
 	}
 
 	var ok bool
-	issues.Project_id, ok = params["project_id"].(int64)
+	issues.ProjectID, ok = params["project_id"].(int64)
 	if !ok {
 		return IssueList{}, fmt.Errorf("error occured during convert %v (project id) to int64", params["project_id"])
 	}
@@ -143,14 +144,14 @@ func (r RmClient) GetIssues(params Params) (IssueList, error) {
 }
 
 // TODO refactor params like GetTimeEntryList
-func (r RmClient) CreateTimeEntry(issueId int64, date string, comment string, hours float32) (string, error) {
+func (r RmClient) CreateTimeEntry(issueID int64, date string, comment string, hours float32) (string, error) {
 	timeEntry := TimeEntryRequest{
-		Time_entry: TimeEntryInner{
-			Issue_id: issueId,
-			Spent_on: date,
+		TimeEntry: TimeEntryInner{
+			IssueID:  issueID,
+			SpentOn:  date,
 			Hours:    hours,
 			Comments: comment,
-			User_id:  r.User.Id,
+			UserID:   r.User.ID,
 		},
 	}
 
@@ -214,8 +215,8 @@ func (r RmClient) getCurrentUser() (UserInner, error) {
 		return UserInner{}, err
 	}
 
-	if userResp.User.Id == 0 {
-		return UserInner{}, fmt.Errorf("user can not have user id - %v", userResp.User.Id)
+	if userResp.User.ID == 0 {
+		return UserInner{}, fmt.Errorf("user can not have user id - %v", userResp.User.ID)
 	}
 
 	return userResp.User, nil

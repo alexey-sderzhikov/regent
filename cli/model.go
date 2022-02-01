@@ -11,12 +11,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const (
-	COMMENT_FIELD = "comment"
-	DATE_FIELD    = "date"
-	HOURS_FIELD   = "hours"
-)
-
 type errMsg error
 
 type model struct {
@@ -37,7 +31,7 @@ type model struct {
 }
 
 type filterStruct struct {
-	for_me bool
+	forMe bool
 }
 
 type keyMap struct {
@@ -122,7 +116,7 @@ func (p pagesStack) popPage() (pagesStack, error) {
 }
 
 func (p pagesStack) printStack() string {
-	var res string = "/"
+	res := "/"
 	for _, page := range p {
 		res += page + "/"
 	}
@@ -169,7 +163,7 @@ func initialModel() (model, error) {
 	m.projects = projects.Projects
 	m.objectCount = len(m.projects)
 
-	m.crumbs = pagesStack{PROJECTS}
+	m.crumbs = pagesStack{projectsPage}
 
 	m.inputs = make([]textinput.Model, 3)
 	m.inputs[0] = initialCommentInput()
@@ -178,7 +172,7 @@ func initialModel() (model, error) {
 
 	m.focusIndex = 0
 
-	m.filters.for_me = false
+	m.filters.forMe = false
 
 	return m, nil
 }
