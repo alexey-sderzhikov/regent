@@ -1,9 +1,6 @@
 package cli
 
 import (
-	"fmt"
-	"os"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -16,12 +13,9 @@ func Start() error {
 	if err != nil {
 		return err
 	}
-	p := tea.NewProgram(m, tea.WithInputTTY())
-	if err := p.Start(); err != nil {
-		fmt.Printf("Alias, there's been an error: %v", err)
-		os.Exit(1)
-		return nil
-	} else {
-		return err
-	}
+
+	p := tea.NewProgram(m)
+
+	err = p.Start()
+	return err
 }
