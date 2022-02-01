@@ -16,11 +16,6 @@ type NameAndID struct {
 	Name string `json:"name"`
 }
 
-//FIXME redundant struct?
-//type ID struct {
-//	ID int64 `json:"id"`
-//}
-
 type Issue struct {
 	ID          int64     `json:"id"`
 	Project     NameAndID `json:"project"`
