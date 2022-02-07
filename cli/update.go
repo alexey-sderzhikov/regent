@@ -25,18 +25,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch m.crumbs.getCurrentPage() {
 		case projectsPage:
-			return m.updateProjects(msg)
+			return m.projectsHandler(msg)
 		case issuesPage:
-			return m.updateIssues(msg)
+			return m.issuesHandler(msg)
 		case inputTimeEntryPage:
-			return m.updateInputTimeEntry(msg)
+			return m.inputTimeEntryHandler(msg)
 		case timeEntriesPage:
-			return m.updateTimeEntries(msg)
+			return m.timeEntriesHandler(msg)
 		case errPage:
-			return m.updateError(msg)
+			return m.errorHandler(msg)
 		}
 	case errMsg:
-		return m.updateError(msg)
+		return m.errorHandler(msg)
 	}
 
 	return m, nil
@@ -72,7 +72,7 @@ func (m model) navigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // update logic if key tap on "projects" page
-func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m model) projectsHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter: // go to project issues
 		var err error
@@ -103,7 +103,7 @@ func (m model) updateProjects(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 // TODO refactoring pagination switching
 // update logic if key tap on "issues" page
-func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m model) issuesHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter: // go to creation new time entry for issue
 		m.inputs[1].SetValue(time.Now().Format("2006-01-02")) // set today date
@@ -193,7 +193,7 @@ func (m model) updateIssues(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // update logic if key tap on "time entries" page
-func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m model) inputTimeEntryHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	// clear status if it not empty while any key
@@ -236,9 +236,6 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 		m.status = status + "time entry at date " + date
-	case tea.KeyCtrlQ: // go to previos page
-		m.cursor = 0
-		m.crumbs, _ = m.crumbs.popPage() // go to previos page
 	case tea.KeyEsc: // escape programm
 		return m, tea.Quit
 	}
@@ -252,7 +249,7 @@ func (m model) updateInputTimeEntry(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) updateTimeEntries(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m model) timeEntriesHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyRight, tea.KeyLeft:
 		var err error
@@ -286,7 +283,7 @@ func (m model) updateTimeEntries(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // update logic if tap key on "error" page
-func (m model) updateError(msg tea.Msg) (model, tea.Cmd) {
+func (m model) errorHandler(msg tea.Msg) (model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {

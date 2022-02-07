@@ -22,3 +22,4 @@ USER_API_KEY=examplekey12345
 - [ ] Functional to add and change issues
 - [ ] Menu
 - [ ] View port for viewing issue and another objects
+- [ ] Filter issues on current sprint
