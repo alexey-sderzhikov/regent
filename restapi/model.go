@@ -16,6 +16,10 @@ type NameAndID struct {
 	Name string `json:"name"`
 }
 
+type ID struct {
+	ID int64 `json:"id"`
+}
+
 type Issue struct {
 	ID          int64     `json:"id"`
 	Project     NameAndID `json:"project"`
@@ -46,7 +50,7 @@ type TimeEntryRequest struct {
 type TimeEntryResponse struct {
 	ID        int64     `json:"id"`
 	Project   NameAndID `json:"project"`
-	Issue     int64     `json:"issue"`
+	Issue     ID        `json:"issue"`
 	User      NameAndID `json:"user"`
 	Activity  NameAndID `json:"activity"`
 	Hours     float32   `json:"hours"`
