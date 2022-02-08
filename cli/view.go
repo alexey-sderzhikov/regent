@@ -57,11 +57,10 @@ func (m model) View() string {
 }
 
 func (m model) viewProjects() string {
-	s := titleStyle.Render("Bergen Projects")
+	var view strings.Builder
 
-	s += "\n"
+	view.WriteString(titleStyle.Render("Bergen Projects") + "\n")
 
-	var mainText string
 	for ind, p := range m.projects {
 		cursor := " "
 		name := p.Name
@@ -70,32 +69,36 @@ func (m model) viewProjects() string {
 			name = currentLineStyle.Render(name)
 		}
 
-		mainText += fmt.Sprintf("%s %s\n", cursor, name)
+		view.WriteString(fmt.Sprintf("%s %s\n", cursor, name))
 	}
 
-	s += textStyle.Render(mainText)
-
-	return s
+	return textStyle.Render(view.String())
 }
 
 func (m model) viewIssues() string {
-	s := titleStyle.Render(fmt.Sprintf(
-		"Issues (%v) project's #%v", m.issues.TotalCount, m.issues.ProjectID),
+	var view strings.Builder
+
+	view.WriteString(
+		titleStyle.Render(fmt.Sprintf(
+			"Issues (%v) project's #%v", m.issues.TotalCount, m.issues.ProjectID),
+		) + "\n",
 	)
 
-	s += "\n"
-
-	var mainText string
-	mainText += fmt.Sprintf(
+	view.WriteString(fmt.Sprintf(
 		"Show from %v to %v issues. Total - %v\n",
 		m.issues.Offset+1,
 		m.issues.Offset+m.issues.Limit,
 		m.issues.TotalCount,
+	))
+
+	view.WriteString(
+		filterStyle.Render(
+			fmt.Sprintf("Issues for me: %v", m.filters.forMe),
+		) + "\n\n",
 	)
-	mainText += filterStyle.Render(fmt.Sprintf("Issues for me: %v", m.filters.forMe))
-	mainText += "\n\n"
+
 	if len(m.issues.Issues) == 0 {
-		mainText += "None suitable issues\n"
+		view.WriteString("None suitable issues\n")
 	} else {
 		for ind, i := range m.issues.Issues {
 			cursor := " "
@@ -105,26 +108,31 @@ func (m model) viewIssues() string {
 				subject = currentLineStyle.Render(subject)
 			}
 
-			mainText += fmt.Sprintf("%s %s\n", cursor, subject)
+			view.WriteString(fmt.Sprintf("%s %s\n", cursor, subject))
 		}
 	}
 
-	s += textStyle.Render(mainText)
-
-	return s
+	return textStyle.Render(view.String())
 }
+
 func (m model) viewTimeEntries() string {
-	s := titleStyle.Render(fmt.Sprintf("%s Time Entries", m.redmineClient.User.Lastname))
+	var view strings.Builder
 
-	s += "\n"
-
-	var mainText string
-	mainText += fmt.Sprintf(
-		"Show from %v to %v issues. Total - %v\n",
-		m.timeEntries.Offset+1,
-		m.timeEntries.Offset+m.issues.Limit,
-		m.timeEntries.TotalCount,
+	view.WriteString(
+		titleStyle.Render(
+			fmt.Sprintf("%s Time Entries", m.redmineClient.User.Lastname),
+		) + "\n",
 	)
+
+	view.WriteString(
+		fmt.Sprintf(
+			"Show from %v to %v issues. Total - %v\n",
+			m.timeEntries.Offset+1,
+			m.timeEntries.Offset+m.issues.Limit,
+			m.timeEntries.TotalCount,
+		),
+	)
+
 	for ind, te := range m.timeEntries.TimeEntries {
 		cursor := " "
 		spentOn := te.SpentOn
@@ -139,40 +147,36 @@ func (m model) viewTimeEntries() string {
 			issueID = currentLineStyle.Render(issueID)
 		}
 
-		mainText += fmt.Sprintf("%s %s %s %s %s\n", cursor, spentOn, issueID, hours, comment)
+		view.WriteString(fmt.Sprintf("%s %s %s %s %s\n", cursor, spentOn, issueID, hours, comment))
 	}
 
-	s += textStyle.Render(mainText)
-
-	return s
+	return textStyle.Render(view.String())
 }
 
 func (m model) viewInputTimeEntry() string {
-	var mainText, s string
-	mainText += fmt.Sprint(
-		"Text comment to time entry:\n",
-		m.inputs[0].View(),
-		"\nText date:\n",
-		m.inputs[1].View(),
-		"\nText work hours:\n",
-		m.inputs[2].View(),
-		"\n",
-	)
+	var view strings.Builder
 
 	if m.status != "" {
-		s += statusStyle.Render(m.status)
-		s += "\n"
+		view.WriteString(
+			statusStyle.Render(m.status + "\n"),
+		)
 	}
 
-	s += textStyle.Render(mainText)
+	view.WriteString(
+		fmt.Sprint(
+			"Text comment to time entry:\n",
+			m.inputs[0].View(),
+			"\nText date:\n",
+			m.inputs[1].View(),
+			"\nText work hours:\n",
+			m.inputs[2].View(),
+			"\n",
+		),
+	)
 
-	return s
+	return textStyle.Render(view.String())
 }
 
 func (m model) viewError() string {
-
-	s := "\n\n"
-	s += errorStyle.Render("Error! - " + fmt.Sprint(m.err))
-
-	return s
+	return errorStyle.Render("\n\nError! - " + fmt.Sprint(m.err))
 }

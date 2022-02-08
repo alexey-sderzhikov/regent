@@ -236,6 +236,16 @@ func (m model) inputTimeEntryHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 		m.status = status + "time entry at date " + date
+		// TODO: this case duplicate code in navigation func
+	case tea.KeyCtrlQ: // go to the previous page
+		m.status = ""
+		m.cursor = 0
+
+		var err error
+		m.crumbs, err = m.crumbs.popPage()
+		if err != nil {
+			return m.errorCreate(err)
+		}
 	case tea.KeyEsc: // escape programm
 		return m, tea.Quit
 	}
