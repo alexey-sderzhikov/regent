@@ -158,7 +158,7 @@ func (m model) viewInputTimeEntry() string {
 
 	if m.status != "" {
 		view.WriteString(
-			statusStyle.Render(m.status + "\n"),
+			statusStyle.Render(m.status) + "\n",
 		)
 	}
 
