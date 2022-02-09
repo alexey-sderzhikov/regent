@@ -16,6 +16,5 @@ func Start() error {
 
 	p := tea.NewProgram(m)
 
-	err = p.Start()
-	return err
+	return p.Start()
 }
