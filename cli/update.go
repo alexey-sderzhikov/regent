@@ -276,6 +276,7 @@ func (m model) timeEntriesHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		params["user_id"] = m.redmineClient.User.ID
 		params["limit"] = m.timeEntries.Limit
 
 		m.timeEntries, err = m.redmineClient.GetTimeEntryList(params)
